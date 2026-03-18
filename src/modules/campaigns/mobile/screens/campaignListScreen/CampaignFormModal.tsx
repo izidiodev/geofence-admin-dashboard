@@ -17,6 +17,7 @@ import {
   Text,
   VStack,
   HStack,
+  Spinner,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
 import {
@@ -27,75 +28,14 @@ import {
   isValidNumber,
 } from "@modules/campaigns/constants/campaignValidation";
 import { typeRepository } from "@modules/types/business/main";
-import type { Campaign, CreateCampaignFullDTO } from "@/types/campaign";
+import type { CampaignHeader, CampaignWithItems, UpdateCampaignDTO } from "@/types/campaign";
 import type { Type } from "@/types/type";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
 import { FormField } from "@/DS/FormField/FormField";
-
-interface CampaignFormModalProps {
-  open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  campaign?: Campaign | null;
-}
+import { CAMPAIGN_MESSAGES } from "@/constants/messages";
 
 type EventKind = "enter" | "dwell" | "exit";
 
-interface FormValues {
-  enter_name: string;
-  enter_description: string;
-  enter_exp_date: string;
-  enter_city_uf: string;
-  enter_enabled: boolean;
-  enter_lat: string;
-  enter_long: string;
-  enter_radius: string;
-  dwell_name: string;
-  dwell_description: string;
-  dwell_exp_date: string;
-  dwell_city_uf: string;
-  dwell_enabled: boolean;
-  dwell_lat: string;
-  dwell_long: string;
-  dwell_radius: string;
-  exit_name: string;
-  exit_description: string;
-  exit_exp_date: string;
-  exit_city_uf: string;
-  exit_enabled: boolean;
-  exit_lat: string;
-  exit_long: string;
-  exit_radius: string;
-}
-
-const defaultValues: FormValues = {
-  enter_name: "",
-  enter_description: "",
-  enter_exp_date: "",
-  enter_city_uf: "",
-  enter_enabled: true,
-  enter_lat: "",
-  enter_long: "",
-  enter_radius: "",
-  dwell_name: "",
-  dwell_description: "",
-  dwell_exp_date: "",
-  dwell_city_uf: "",
-  dwell_enabled: true,
-  dwell_lat: "",
-  dwell_long: "",
-  dwell_radius: "",
-  exit_name: "",
-  exit_description: "",
-  exit_exp_date: "",
-  exit_city_uf: "",
-  exit_enabled: true,
-  exit_lat: "",
-  exit_long: "",
-  exit_radius: "",
-};
-
-/** Nomes que identificam cada tipo (PT e EN) para a coluna correspondente: Entrada | Permanência | Saída. */
 const TYPE_NAME_BY_KIND: Record<EventKind, string[]> = {
   enter: ["entrada", "enter"],
   dwell: ["permanência", "permanencia", "dwell"],
@@ -115,179 +55,39 @@ function findTypeByKind(types: Type[], kind: EventKind): Type | undefined {
   });
 }
 
-interface DivisionSectionProps {
-  kind: EventKind;
-  control: ReturnType<typeof useForm<FormValues>>["control"];
-}
-
 const KIND_LABEL: Record<EventKind, string> = {
   enter: "Entrada",
   dwell: "Permanência",
   exit: "Saída",
 };
 
-function DivisionSection({ kind, control }: DivisionSectionProps): React.ReactNode {
-  const prefix = kind;
+interface CampaignFormModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  campaign: CampaignHeader | null;
+}
 
-  return (
-    <Box
-      flex="1"
-      minW="260px"
-      p={4}
-      borderRadius="md"
-      borderWidth="1px"
-      borderColor="gray.200"
-      bg="gray.50"
-    >
-      <Text fontWeight="semibold" color="gray.800" mb={3} fontSize="md">
-        {KIND_LABEL[kind]}
-      </Text>
-      <VStack align="stretch" gap={3} as="div">
-        <Controller
-          name={`${prefix}_name` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Nome é obrigatório",
-            maxLength: {
-              value: CAMPAIGN_VALIDATION.NAME_MAX_LENGTH,
-              message: `Máximo ${CAMPAIGN_VALIDATION.NAME_MAX_LENGTH} caracteres`,
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Nome" error={fieldState.error?.message}>
-              <Input id={`${prefix}-name`} {...field} size="sm" maxLength={CAMPAIGN_VALIDATION.NAME_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_description` as keyof FormValues}
-          control={control}
-          rules={{
-            maxLength: {
-              value: CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH,
-              message: `Máximo ${CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH} caracteres`,
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Descrição" error={fieldState.error?.message}>
-              <Input id={`${prefix}-desc`} {...field} placeholder="Opcional" size="sm" maxLength={CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_exp_date` as keyof FormValues}
-          control={control}
-          rules={{
-            validate: (v) => isValidDateString(typeof v === "string" ? v : "") || "Data de expiração inválida",
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Data de expiração" error={fieldState.error?.message}>
-              <Input id={`${prefix}-exp`} type="date" {...field} size="sm" />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_city_uf` as keyof FormValues}
-          control={control}
-          rules={{
-            maxLength: {
-              value: CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH,
-              message: `Máximo ${CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH} caracteres`,
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Cidade/UF" error={fieldState.error?.message}>
-              <Input id={`${prefix}-city`} {...field} placeholder="Ex: São Paulo - SP" size="sm" maxLength={CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_enabled` as keyof FormValues}
-          control={control}
-          render={({ field }) => (
-            <Checkbox.Root
-              id={`${prefix}-enabled`}
-              checked={field.value}
-              onCheckedChange={(e) => field.onChange(Boolean(e.checked))}
-            >
-              <Checkbox.HiddenInput />
-              <Checkbox.Control />
-              <Checkbox.Label>Ativa</Checkbox.Label>
-            </Checkbox.Root>
-          )}
-        />
-        <Controller
-          name={`${prefix}_lat` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Latitude é obrigatória",
-            validate: (v) => {
-              if (!isValidNumber(v)) return "Latitude deve ser um número";
-              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.LAT_LONG_MIN, CAMPAIGN_VALIDATION.LAT_LONG_MAX)) {
-                return `Latitude entre ${CAMPAIGN_VALIDATION.LAT_LONG_MIN} e ${CAMPAIGN_VALIDATION.LAT_LONG_MAX}`;
-              }
-              return true;
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Latitude" error={fieldState.error?.message}>
-              <Input
-                id={`${prefix}-lat`}
-                type="number"
-                step="any"
-                {...field}
-                size="sm"
-                min={CAMPAIGN_VALIDATION.LAT_LONG_MIN}
-                max={CAMPAIGN_VALIDATION.LAT_LONG_MAX}
-              />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_long` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Longitude é obrigatória",
-            validate: (v) => {
-              if (!isValidNumber(v)) return "Longitude deve ser um número";
-              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.LAT_LONG_MIN, CAMPAIGN_VALIDATION.LAT_LONG_MAX)) {
-                return `Longitude entre ${CAMPAIGN_VALIDATION.LAT_LONG_MIN} e ${CAMPAIGN_VALIDATION.LAT_LONG_MAX}`;
-              }
-              return true;
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Longitude" error={fieldState.error?.message}>
-              <Input
-                id={`${prefix}-long`}
-                type="number"
-                step="any"
-                {...field}
-                size="sm"
-                min={CAMPAIGN_VALIDATION.LAT_LONG_MIN}
-                max={CAMPAIGN_VALIDATION.LAT_LONG_MAX}
-              />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_radius` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Raio é obrigatório",
-            validate: (v) =>
-              isIntegerInRange(v, CAMPAIGN_VALIDATION.RADIUS_MIN, CAMPAIGN_VALIDATION.RADIUS_MAX) ||
-              `Raio deve ser inteiro entre ${CAMPAIGN_VALIDATION.RADIUS_MIN} e ${CAMPAIGN_VALIDATION.RADIUS_MAX}`,
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Raio (m)" error={fieldState.error?.message}>
-              <Input id={`${prefix}-radius`} type="number" min={CAMPAIGN_VALIDATION.RADIUS_MIN} max={CAMPAIGN_VALIDATION.RADIUS_MAX} {...field} size="sm" />
-            </FormField>
-          )}
-        />
-      </VStack>
-    </Box>
-  );
+interface FormValues {
+  name: string;
+  exp_date: string;
+  city_uf: string;
+  enabled: boolean;
+  enter_title: string;
+  enter_description: string;
+  enter_lat: string;
+  enter_long: string;
+  enter_radius: string;
+  dwell_title: string;
+  dwell_description: string;
+  dwell_lat: string;
+  dwell_long: string;
+  dwell_radius: string;
+  exit_title: string;
+  exit_description: string;
+  exit_lat: string;
+  exit_long: string;
+  exit_radius: string;
 }
 
 export function CampaignFormModal({
@@ -298,140 +98,141 @@ export function CampaignFormModal({
 }: CampaignFormModalProps): React.ReactNode {
   const [loading, setLoading] = useState(false);
   const [loadingTypes, setLoadingTypes] = useState(false);
+  const [loadingCampaign, setLoadingCampaign] = useState(false);
   const [typesFromApi, setTypesFromApi] = useState<Type[]>([]);
-  const isEdit = Boolean(campaign);
+  const [fullCampaign, setFullCampaign] = useState<CampaignWithItems | null>(null);
 
   const typeEnter = useMemo(() => findTypeByKind(typesFromApi, "enter"), [typesFromApi]);
   const typeDwell = useMemo(() => findTypeByKind(typesFromApi, "dwell"), [typesFromApi]);
   const typeExit = useMemo(() => findTypeByKind(typesFromApi, "exit"), [typesFromApi]);
 
   const { control, handleSubmit, reset } = useForm<FormValues>({
-    defaultValues,
+    defaultValues: {
+      name: "",
+      exp_date: "",
+      city_uf: "",
+      enabled: true,
+      enter_title: "",
+      enter_description: "",
+      enter_lat: "",
+      enter_long: "",
+      enter_radius: "",
+      dwell_title: "",
+      dwell_description: "",
+      dwell_lat: "",
+      dwell_long: "",
+      dwell_radius: "",
+      exit_title: "",
+      exit_description: "",
+      exit_lat: "",
+      exit_long: "",
+      exit_radius: "",
+    },
   });
 
   useEffect(() => {
     if (open) {
       setLoadingTypes(true);
       typeRepository
-        .list({ page: 1, limit: 10 })
+        .list({ page: 1, limit: 100 })
         .then((result) => {
-          if (result.success && result.data) {
-            setTypesFromApi(result.data.items);
-          } else {
-            setTypesFromApi([]);
-          }
+          if (result.success && result.data) setTypesFromApi(result.data.items);
+          else setTypesFromApi([]);
         })
         .finally(() => setLoadingTypes(false));
     } else {
       setTypesFromApi([]);
+      setFullCampaign(null);
     }
   }, [open]);
 
   useEffect(() => {
-    if (open) {
-      if (campaign) {
-        reset({
-          enter_name: campaign.name,
-          enter_description: campaign.description ?? "",
-          enter_exp_date: campaign.exp_date ? campaign.exp_date.slice(0, 10) : "",
-          enter_city_uf: campaign.city_uf ?? "",
-          enter_enabled: campaign.enabled,
-          enter_lat: String(campaign.lat),
-          enter_long: String(campaign.long),
-          enter_radius: String(campaign.radius),
-          dwell_name: campaign.name,
-          dwell_description: campaign.description ?? "",
-          dwell_exp_date: campaign.exp_date ? campaign.exp_date.slice(0, 10) : "",
-          dwell_city_uf: campaign.city_uf ?? "",
-          dwell_enabled: campaign.enabled,
-          dwell_lat: String(campaign.lat),
-          dwell_long: String(campaign.long),
-          dwell_radius: String(campaign.radius),
-          exit_name: campaign.name,
-          exit_description: campaign.description ?? "",
-          exit_exp_date: campaign.exp_date ? campaign.exp_date.slice(0, 10) : "",
-          exit_city_uf: campaign.city_uf ?? "",
-          exit_enabled: campaign.enabled,
-          exit_lat: String(campaign.lat),
-          exit_long: String(campaign.long),
-          exit_radius: String(campaign.radius),
-        });
-      } else {
-        reset(defaultValues);
-      }
-    }
-  }, [open, campaign, reset]);
+    if (!open || !campaign) return;
+    setLoadingCampaign(true);
+    campaignController
+      .getById(campaign.id)
+      .then((result) => {
+        if (result.success && result.data) {
+          setFullCampaign(result.data);
+          const c = result.data;
+          const toStr = (v: string | number | null | undefined) => (v != null ? String(v) : "");
+          reset({
+            name: c.name,
+            exp_date: c.exp_date ? c.exp_date.slice(0, 10) : "",
+            city_uf: c.city_uf ?? "",
+            enabled: c.enabled,
+            enter_title: c.enter?.title ?? "",
+            enter_description: c.enter?.description ?? "",
+            enter_lat: toStr(c.enter?.lat),
+            enter_long: toStr(c.enter?.long),
+            enter_radius: c.enter != null ? String(c.enter.radius) : "",
+            dwell_title: c.dwell?.title ?? "",
+            dwell_description: c.dwell?.description ?? "",
+            dwell_lat: toStr(c.dwell?.lat),
+            dwell_long: toStr(c.dwell?.long),
+            dwell_radius: c.dwell != null ? String(c.dwell.radius) : "",
+            exit_title: c.exit?.title ?? "",
+            exit_description: c.exit?.description ?? "",
+            exit_lat: toStr(c.exit?.lat),
+            exit_long: toStr(c.exit?.long),
+            exit_radius: c.exit != null ? String(c.exit.radius) : "",
+          });
+        } else setFullCampaign(null);
+      })
+      .finally(() => setLoadingCampaign(false));
+  }, [open, campaign?.id, reset]);
 
   const onSubmit = useCallback(
     async (values: FormValues) => {
+      if (!campaign || !fullCampaign) return;
       setLoading(true);
-      if (isEdit) {
-        const result = await campaignController.update(campaign!.id, {
-          name: values.enter_name.trim(),
+      const dto: UpdateCampaignDTO = {
+        name: values.name.trim() || undefined,
+        exp_date: values.exp_date || undefined,
+        city_uf: values.city_uf.trim() || undefined,
+        enabled: values.enabled,
+      };
+      if (fullCampaign.enter) {
+        dto.enter = {
+          title: values.enter_title.trim(),
           description: values.enter_description.trim() || undefined,
-          exp_date: values.enter_exp_date || undefined,
-          city_uf: values.enter_city_uf.trim() || undefined,
           type_id: typeEnter?.id,
-          enabled: values.enter_enabled,
           lat: Number(values.enter_lat),
           long: Number(values.enter_long),
           radius: Math.round(Number(values.enter_radius)),
-        });
-        setLoading(false);
-        showApiResultSnackbar(result, { successMessage: "Campanha atualizada." });
-        if (result.success) onSuccess();
-        return;
+        };
       }
-      const enterTypeId = typeEnter?.id ?? "";
-      const dwellTypeId = typeDwell?.id ?? "";
-      const exitTypeId = typeExit?.id ?? "";
-
-      const dto: CreateCampaignFullDTO = {
-        enter: {
-          name: values.enter_name.trim(),
-          description: values.enter_description.trim() || undefined,
-          exp_date: values.enter_exp_date || undefined,
-          city_uf: values.enter_city_uf.trim() || undefined,
-          type_id: enterTypeId,
-          enabled: values.enter_enabled,
-          lat: Number(values.enter_lat),
-          long: Number(values.enter_long),
-          radius: Math.round(Number(values.enter_radius)),
-        },
-        dwell: {
-          name: values.dwell_name.trim(),
+      if (fullCampaign.dwell) {
+        dto.dwell = {
+          title: values.dwell_title.trim(),
           description: values.dwell_description.trim() || undefined,
-          exp_date: values.dwell_exp_date || undefined,
-          city_uf: values.dwell_city_uf.trim() || undefined,
-          type_id: dwellTypeId,
-          enabled: values.dwell_enabled,
+          type_id: typeDwell?.id,
           lat: Number(values.dwell_lat),
           long: Number(values.dwell_long),
           radius: Math.round(Number(values.dwell_radius)),
-        },
-        exit: {
-          name: values.exit_name.trim(),
+        };
+      }
+      if (fullCampaign.exit) {
+        dto.exit = {
+          title: values.exit_title.trim(),
           description: values.exit_description.trim() || undefined,
-          exp_date: values.exit_exp_date || undefined,
-          city_uf: values.exit_city_uf.trim() || undefined,
-          type_id: exitTypeId,
-          enabled: values.exit_enabled,
+          type_id: typeExit?.id,
           lat: Number(values.exit_lat),
           long: Number(values.exit_long),
           radius: Math.round(Number(values.exit_radius)),
-        },
-      };
-      const result = await campaignController.createTriplet(dto);
-      setLoading(false);
-      showApiResultSnackbar(result, {
-        successMessage: "As 3 campanhas (Enter, Dwell, Exit) foram criadas.",
-      });
-      if (result.success) {
-        onSuccess();
+        };
       }
+      const result = await campaignController.update(campaign.id, dto);
+      setLoading(false);
+      showApiResultSnackbar(result, { successMessage: "Campanha atualizada." });
+      if (result.success) onSuccess();
     },
-    [isEdit, campaign, typeEnter?.id, typeDwell?.id, typeExit?.id, onSuccess]
+    [campaign, fullCampaign, typeEnter?.id, typeDwell?.id, typeExit?.id, onSuccess]
   );
+
+  if (!campaign) return null;
+
+  const showForm = fullCampaign && !loadingCampaign;
 
   return (
     <DialogRoot open={open} onOpenChange={(e) => (!e.open ? onClose() : undefined)}>
@@ -439,34 +240,186 @@ export function CampaignFormModal({
         <DialogBackdrop />
         <DialogContent maxW="1200px" width="95vw">
           <DialogHeader>
-            <DialogTitle>{isEdit ? "Editar campanha" : "Nova campanha"}</DialogTitle>
+            <DialogTitle>Editar campanha</DialogTitle>
             <DialogCloseTrigger />
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <DialogBody>
-              {loadingTypes ? (
-                <Text color="gray.600" py={4}>
-                  Carregando tipos (Entrada, Permanência, Saída)…
-                </Text>
-              ) : (
-                <HStack gap={4} align="flex-start" flexWrap="wrap" width="100%">
-                  <DivisionSection kind="enter" control={control} />
-                  <DivisionSection kind="dwell" control={control} />
-                  <DivisionSection kind="exit" control={control} />
-                </HStack>
-              )}
+              {loadingCampaign ? (
+                <Box py={8} display="flex" justifyContent="center">
+                  <Spinner size="lg" />
+                </Box>
+              ) : loadingTypes ? (
+                <Text color="gray.600" py={4}>Carregando tipos…</Text>
+              ) : showForm ? (
+                <VStack align="stretch" gap={6}>
+                  <Box>
+                    <Text fontWeight="semibold" color="gray.800" mb={3}>Cabeçalho</Text>
+                    <HStack gap={4} flexWrap="wrap">
+                      <Controller
+                        name="name"
+                        control={control}
+                        rules={{
+                          required: CAMPAIGN_MESSAGES.campaignNameRequired,
+                          maxLength: { value: CAMPAIGN_VALIDATION.NAME_MAX_LENGTH, message: CAMPAIGN_MESSAGES.campaignNameMax(CAMPAIGN_VALIDATION.NAME_MAX_LENGTH) },
+                        }}
+                        render={({ field, fieldState }) => (
+                          <FormField label={CAMPAIGN_MESSAGES.campaignName} error={fieldState.error?.message} htmlFor="edit-name">
+                            <Input id="edit-name" {...field} size="sm" maxLength={CAMPAIGN_VALIDATION.NAME_MAX_LENGTH + 1} />
+                          </FormField>
+                        )}
+                      />
+                      <Controller
+                        name="exp_date"
+                        control={control}
+                        rules={{ validate: (v) => isValidDateString(typeof v === "string" ? v : "") || CAMPAIGN_MESSAGES.expDateInvalid }}
+                        render={({ field, fieldState }) => (
+                          <FormField label={CAMPAIGN_MESSAGES.expDate} error={fieldState.error?.message} htmlFor="edit-exp">
+                            <Input id="edit-exp" type="date" {...field} size="sm" />
+                          </FormField>
+                        )}
+                      />
+                      <Controller
+                        name="city_uf"
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <FormField label={CAMPAIGN_MESSAGES.cityUf} error={fieldState.error?.message} htmlFor="edit-city">
+                            <Input id="edit-city" {...field} size="sm" maxLength={CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH + 1} />
+                          </FormField>
+                        )}
+                      />
+                      <Controller
+                        name="enabled"
+                        control={control}
+                        render={({ field }) => (
+                          <Checkbox.Root id="edit-enabled" checked={field.value} onCheckedChange={(e) => field.onChange(Boolean(e.checked))}>
+                            <Checkbox.HiddenInput />
+                            <Checkbox.Control />
+                            <Checkbox.Label>{CAMPAIGN_MESSAGES.active}</Checkbox.Label>
+                          </Checkbox.Root>
+                        )}
+                      />
+                    </HStack>
+                  </Box>
+                  <HStack gap={4} align="flex-start" flexWrap="wrap" width="100%">
+                    {fullCampaign.enter && (
+                      <EditItemSection kind="enter" control={control} />
+                    )}
+                    {fullCampaign.dwell && (
+                      <EditItemSection kind="dwell" control={control} />
+                    )}
+                    {fullCampaign.exit && (
+                      <EditItemSection kind="exit" control={control} />
+                    )}
+                  </HStack>
+                  {!fullCampaign.enter && !fullCampaign.dwell && !fullCampaign.exit && (
+                    <Text color="gray.500" fontSize="sm">Nenhum item cadastrado. Adicione itens pela API se necessário.</Text>
+                  )}
+                </VStack>
+              ) : null}
             </DialogBody>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} minW="120px">
-                Cancelar
+              <Button type="button" variant="outline" onClick={onClose} minW="100px">
+                {CAMPAIGN_MESSAGES.cancel}
               </Button>
-              <Button type="submit" loading={loading} minW="140px" disabled={loadingTypes}>
-                {isEdit ? "Salvar" : "Criar campanha"}
+              <Button type="submit" loading={loading} minW="100px" disabled={!showForm || loadingTypes}>
+                {CAMPAIGN_MESSAGES.save}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </DialogPositioner>
     </DialogRoot>
+  );
+}
+
+function EditItemSection({
+  kind,
+  control,
+}: {
+  kind: EventKind;
+  control: ReturnType<typeof useForm<FormValues>>["control"];
+}): React.ReactNode {
+  const prefix = kind;
+  return (
+    <Box flex="1" minW="260px" p={4} borderRadius="md" borderWidth="1px" borderColor="gray.200" bg="gray.50">
+      <Text fontWeight="semibold" color="gray.800" mb={3} fontSize="md">
+        {KIND_LABEL[kind]}
+      </Text>
+      <VStack align="stretch" gap={3} as="div">
+        <Controller
+          name={`${prefix}_title` as keyof FormValues}
+          control={control}
+          rules={{
+            required: CAMPAIGN_MESSAGES.itemTitleRequired,
+            maxLength: { value: CAMPAIGN_VALIDATION.TITLE_MAX_LENGTH, message: CAMPAIGN_MESSAGES.campaignNameMax(CAMPAIGN_VALIDATION.TITLE_MAX_LENGTH) },
+          }}
+          render={({ field, fieldState }) => (
+            <FormField label={CAMPAIGN_MESSAGES.itemTitle} error={fieldState.error?.message} htmlFor={`${prefix}-title`}>
+              <Input id={`${prefix}-title`} {...field} value={String(field.value ?? "")} size="sm" maxLength={CAMPAIGN_VALIDATION.TITLE_MAX_LENGTH + 1} />
+            </FormField>
+          )}
+        />
+        <Controller
+          name={`${prefix}_description` as keyof FormValues}
+          control={control}
+          rules={{ maxLength: { value: CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH, message: CAMPAIGN_MESSAGES.itemDescriptionMax(CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH) } }}
+          render={({ field, fieldState }) => (
+            <FormField label={CAMPAIGN_MESSAGES.itemDescription} error={fieldState.error?.message} htmlFor={`${prefix}-desc`}>
+              <Input id={`${prefix}-desc`} {...field} value={String(field.value ?? "")} placeholder="Opcional" size="sm" maxLength={CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH + 1} />
+            </FormField>
+          )}
+        />
+        <Controller
+          name={`${prefix}_lat` as keyof FormValues}
+          control={control}
+          rules={{
+            required: "Latitude é obrigatória",
+            validate: (v) => {
+              if (!isValidNumber(v)) return "Latitude deve ser um número";
+              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.ITEM_LAT_MIN, CAMPAIGN_VALIDATION.ITEM_LAT_MAX)) return `Latitude entre ${CAMPAIGN_VALIDATION.ITEM_LAT_MIN} e ${CAMPAIGN_VALIDATION.ITEM_LAT_MAX}`;
+              return true;
+            },
+          }}
+          render={({ field, fieldState }) => (
+            <FormField label="Latitude" error={fieldState.error?.message} htmlFor={`${prefix}-lat`}>
+              <Input id={`${prefix}-lat`} type="number" step="any" {...field} value={String(field.value ?? "")} size="sm" min={CAMPAIGN_VALIDATION.ITEM_LAT_MIN} max={CAMPAIGN_VALIDATION.ITEM_LAT_MAX} />
+            </FormField>
+          )}
+        />
+        <Controller
+          name={`${prefix}_long` as keyof FormValues}
+          control={control}
+          rules={{
+            required: "Longitude é obrigatória",
+            validate: (v) => {
+              if (!isValidNumber(v)) return "Longitude deve ser um número";
+              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.ITEM_LONG_MIN, CAMPAIGN_VALIDATION.ITEM_LONG_MAX)) return `Longitude entre ${CAMPAIGN_VALIDATION.ITEM_LONG_MIN} e ${CAMPAIGN_VALIDATION.ITEM_LONG_MAX}`;
+              return true;
+            },
+          }}
+          render={({ field, fieldState }) => (
+            <FormField label="Longitude" error={fieldState.error?.message} htmlFor={`${prefix}-long`}>
+              <Input id={`${prefix}-long`} type="number" step="any" {...field} value={String(field.value ?? "")} size="sm" min={CAMPAIGN_VALIDATION.ITEM_LONG_MIN} max={CAMPAIGN_VALIDATION.ITEM_LONG_MAX} />
+            </FormField>
+          )}
+        />
+        <Controller
+          name={`${prefix}_radius` as keyof FormValues}
+          control={control}
+          rules={{
+            required: "Raio é obrigatório",
+            validate: (v) =>
+              isIntegerInRange(v, CAMPAIGN_VALIDATION.RADIUS_MIN, CAMPAIGN_VALIDATION.RADIUS_MAX) ||
+              `Raio entre ${CAMPAIGN_VALIDATION.RADIUS_MIN} e ${CAMPAIGN_VALIDATION.RADIUS_MAX}`,
+          }}
+          render={({ field, fieldState }) => (
+            <FormField label="Raio (m)" error={fieldState.error?.message} htmlFor={`${prefix}-radius`}>
+              <Input id={`${prefix}-radius`} type="number" {...field} value={String(field.value ?? "")} size="sm" min={CAMPAIGN_VALIDATION.RADIUS_MIN} max={CAMPAIGN_VALIDATION.RADIUS_MAX} />
+            </FormField>
+          )}
+        />
+      </VStack>
+    </Box>
   );
 }

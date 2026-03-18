@@ -8,8 +8,12 @@ const origin =
     : "";
 const baseURL = origin ? `${origin}/api` : "/api";
 
+const TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 2;
+
 const apiClient: AxiosInstance = axios.create({
   baseURL,
+  timeout: TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,9 +29,19 @@ apiClient.interceptors.request.use((config) => {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config as (typeof error.config) & { __retryCount?: number };
+    const retryCount = config?.__retryCount ?? 0;
+    const shouldRetry =
+      config != null &&
+      retryCount < MAX_RETRIES &&
+      (error.code === "ECONNABORTED" || (error.response?.status >= 500 && error.response?.status < 600));
+    if (shouldRetry) {
+      config.__retryCount = retryCount + 1;
+      return apiClient.request(config);
+    }
     const isLoginRequest =
-      typeof error.config?.url === "string" && error.config.url.includes("auth/login");
+      typeof config?.url === "string" && config.url.includes("auth/login");
     if (error.response?.status === 401 && !isLoginRequest) {
       localStorageController.removeToken();
       localStorageController.removeItem(localStorageController.getUserKey());

@@ -10,9 +10,6 @@ import {
   Heading,
   HStack,
   Input,
-  NativeSelectRoot,
-  NativeSelectField,
-  NativeSelectIndicator,
   TableRoot,
   TableHeader,
   TableBody,
@@ -22,20 +19,23 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { SelectField } from "@/ds/SelectField/SelectField";
 import { campaignController } from "@modules/campaigns/business";
-import type { Campaign, CampaignListParams } from "@/types/campaign";
+import type { CampaignHeader, CampaignListParams } from "@/types/campaign";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
+import { CAMPAIGN_MESSAGES } from "@/constants/messages";
 import { ConfirmDialog } from "@/DS/ConfirmDialog/ConfirmDialog";
+import { CreateCampaignModal } from "./CreateCampaignModal";
+import { AddCampaignItemsModal } from "./AddCampaignItemsModal";
 import { CampaignFormModal } from "./CampaignFormModal";
 import { CampaignViewModal } from "./CampaignViewModal";
 
 const LIMIT_OPTIONS = [10, 20, 50];
 
-/** Alinhamento das colunas (altere aqui para ajustar título e dados de uma vez). */
+/** Alinhamento das colunas (listagem retorna só cabeçalho, sem itens). */
 const COL_ALIGN = {
   name: "left" as const,
   city_uf: "center" as const,
-  radius: "center" as const,
   enabled: "center" as const,
   is_deleted: "center" as const,
   actions: "right" as const,
@@ -44,7 +44,7 @@ const COL_ALIGN = {
 type SearchField = "name" | "city_uf";
 
 export function CampaignListScreen(): React.ReactNode {
-  const [items, setItems] = useState<Campaign[]>([]);
+  const [items, setItems] = useState<CampaignHeader[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(1);
@@ -57,11 +57,15 @@ export function CampaignListScreen(): React.ReactNode {
   const [filterExcluidas, setFilterExcluidas] = useState(false);
   const [filterAtivas, setFilterAtivas] = useState(true);
 
-  const [viewCampaign, setViewCampaign] = useState<Campaign | null>(null);
+  const [viewCampaign, setViewCampaign] = useState<CampaignHeader | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [editCampaign, setEditCampaign] = useState<Campaign | null>(null);
-  const [deleteCampaign, setDeleteCampaign] = useState<Campaign | null>(null);
+  const [addItemsOpen, setAddItemsOpen] = useState(false);
+  const [addItemsCampaignId, setAddItemsCampaignId] = useState("");
+  const [addItemsCampaignName, setAddItemsCampaignName] = useState("");
+  const [editCampaign, setEditCampaign] = useState<CampaignHeader | null>(null);
+  const [deleteCampaign, setDeleteCampaign] = useState<CampaignHeader | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     const params: CampaignListParams = {
@@ -73,13 +77,17 @@ export function CampaignListScreen(): React.ReactNode {
       enabled: filterAtivas,
     };
     setLoading(true);
+    setListError(null);
     const result = await campaignController.list(params);
     setLoading(false);
     if (result.success && result.data) {
       setItems(result.data.items);
       setTotal(result.data.total);
       setTotalPages(result.data.totalPages);
+      setListError(null);
     } else {
+      const msg = !result.success && "error" in result ? result.error : CAMPAIGN_MESSAGES.listError;
+      setListError(msg);
       showApiResultSnackbar(result);
     }
   }, [page, limit, searchField, searchValue, filterExcluidas, filterAtivas]);
@@ -96,8 +104,16 @@ export function CampaignListScreen(): React.ReactNode {
     return () => window.clearTimeout(t);
   }, [searchInput]);
 
-  const handleCreateSuccess = (): void => {
+  const handleCreateSuccess = (campaignId: string, campaignName: string): void => {
     setCreateOpen(false);
+    setAddItemsCampaignId(campaignId);
+    setAddItemsCampaignName(campaignName);
+    setAddItemsOpen(true);
+  };
+  const handleAddItemsSuccess = (): void => {
+    setAddItemsOpen(false);
+    setAddItemsCampaignId("");
+    setAddItemsCampaignName("");
     loadList();
   };
   const handleEditSuccess = (): void => {
@@ -109,7 +125,7 @@ export function CampaignListScreen(): React.ReactNode {
     setDeleteLoading(true);
     const result = await campaignController.softDelete(deleteCampaign.id);
     setDeleteLoading(false);
-    showApiResultSnackbar(result, { successMessage: "Campanha excluída." });
+    showApiResultSnackbar(result, { successMessage: CAMPAIGN_MESSAGES.deletedSuccess });
     if (result.success) {
       setDeleteCampaign(null);
       loadList();
@@ -121,51 +137,26 @@ export function CampaignListScreen(): React.ReactNode {
 
   return (
     <VStack align="stretch" gap={6}>
-      <Heading size="lg">Campanhas</Heading>
+      <Heading size="lg">{CAMPAIGN_MESSAGES.title}</Heading>
 
       <HStack gap={4} flexWrap="wrap">
         <Button onClick={() => setCreateOpen(true)} colorPalette="blue" minW="120px">
-          Nova campanha
+          {CAMPAIGN_MESSAGES.newCampaign}
         </Button>
       </HStack>
 
       <HStack gap={4} flexWrap="wrap" align="center">
-        <NativeSelectRoot
+        <SelectField
+          value={searchField}
+          onChange={(v) => setSearchField(v as SearchField)}
+          options={[
+            { value: "name", label: CAMPAIGN_MESSAGES.searchByName },
+            { value: "city_uf", label: CAMPAIGN_MESSAGES.searchByCity },
+          ]}
           width="160px"
-          position="relative"
-          borderWidth="1px"
-          borderRadius="md"
-          bg="white"
-          _focusWithin={{ borderColor: "blue.500", boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)" }}
-        >
-          <NativeSelectField
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value as SearchField)}
-            pr="8"
-            py="2"
-            pl="3"
-            width="100%"
-            border="none"
-            bg="transparent"
-            cursor="pointer"
-            appearance="none"
-          >
-            <option value="name">Nome</option>
-            <option value="city_uf">Cidade/UF</option>
-          </NativeSelectField>
-          <Box
-            position="absolute"
-            right="2"
-            top="50%"
-            transform="translateY(-50%)"
-            pointerEvents="none"
-            color="gray.500"
-          >
-            <NativeSelectIndicator />
-          </Box>
-        </NativeSelectRoot>
+        />
         <Input
-          placeholder="Buscar"
+          placeholder={CAMPAIGN_MESSAGES.searchPlaceholder}
           width="576px"
           maxW="100%"
           value={searchInput}
@@ -180,7 +171,7 @@ export function CampaignListScreen(): React.ReactNode {
         >
           <Checkbox.HiddenInput />
           <Checkbox.Control />
-          <Checkbox.Label>Excluídas</Checkbox.Label>
+          <Checkbox.Label>{CAMPAIGN_MESSAGES.filterExcluidas}</Checkbox.Label>
         </Checkbox.Root>
         <Checkbox.Root
           checked={filterAtivas}
@@ -191,9 +182,18 @@ export function CampaignListScreen(): React.ReactNode {
         >
           <Checkbox.HiddenInput />
           <Checkbox.Control />
-          <Checkbox.Label>Ativas</Checkbox.Label>
+          <Checkbox.Label>{CAMPAIGN_MESSAGES.filterAtivas}</Checkbox.Label>
         </Checkbox.Root>
       </HStack>
+
+      {listError && (
+        <Box p={4} borderRadius="md" bg="red.50" borderWidth="1px" borderColor="red.200">
+          <Text color="red.800" mb={2}>{listError}</Text>
+          <Button size="sm" colorPalette="red" onClick={() => loadList()}>
+            {CAMPAIGN_MESSAGES.tryAgain}
+          </Button>
+        </Box>
+      )}
 
       <Box
         overflowX="auto"
@@ -207,6 +207,7 @@ export function CampaignListScreen(): React.ReactNode {
           <TableHeader>
             <TableRow bg="gray.50" _hover={{ bg: "gray.50" }}>
               <TableColumnHeader
+                scope="col"
                 textAlign={COL_ALIGN.name}
                 py={3}
                 px={4}
@@ -219,9 +220,10 @@ export function CampaignListScreen(): React.ReactNode {
                 textOverflow="ellipsis"
                 whiteSpace="nowrap"
               >
-                Nome
+                {CAMPAIGN_MESSAGES.colName}
               </TableColumnHeader>
               <TableColumnHeader
+                scope="col"
                 textAlign={COL_ALIGN.city_uf}
                 py={3}
                 px={4}
@@ -234,45 +236,30 @@ export function CampaignListScreen(): React.ReactNode {
                 textOverflow="ellipsis"
                 whiteSpace="nowrap"
               >
-                Cidade/UF
+                {CAMPAIGN_MESSAGES.colCityUf}
               </TableColumnHeader>
-              <TableColumnHeader
-                textAlign={COL_ALIGN.radius}
-                py={3}
-                px={4}
-                fontWeight="semibold"
-                color="gray.700"
-                borderBottomWidth="1px"
-                borderColor="gray.200"
-                maxW="100px"
-                overflow="hidden"
-                textOverflow="ellipsis"
-                whiteSpace="nowrap"
-              >
-                Raio (m)
+              <TableColumnHeader scope="col" textAlign={COL_ALIGN.enabled} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
+                {CAMPAIGN_MESSAGES.colActive}
               </TableColumnHeader>
-              <TableColumnHeader textAlign={COL_ALIGN.enabled} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
-                Ativa
+              <TableColumnHeader scope="col" textAlign={COL_ALIGN.is_deleted} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
+                {CAMPAIGN_MESSAGES.colDeleted}
               </TableColumnHeader>
-              <TableColumnHeader textAlign={COL_ALIGN.is_deleted} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
-                Excluída
-              </TableColumnHeader>
-              <TableColumnHeader textAlign={COL_ALIGN.actions} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
-                Ações
+              <TableColumnHeader scope="col" textAlign={COL_ALIGN.actions} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
+                {CAMPAIGN_MESSAGES.colActions}
               </TableColumnHeader>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} textAlign="center" py={8} color="gray.500">
-                  Carregando...
+                <TableCell colSpan={5} textAlign="center" py={8} color="gray.500">
+                  {CAMPAIGN_MESSAGES.loading}
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} textAlign="center" py={8} color="gray.500">
-                  Nenhuma campanha encontrada.
+                <TableCell colSpan={5} textAlign="center" py={8} color="gray.500">
+                  {CAMPAIGN_MESSAGES.noCampaigns}
                 </TableCell>
               </TableRow>
             ) : (
@@ -309,32 +296,20 @@ export function CampaignListScreen(): React.ReactNode {
                   >
                     {c.city_uf ?? "—"}
                   </TableCell>
-                  <TableCell
-                    textAlign={COL_ALIGN.radius}
-                    py={3}
-                    px={4}
-                    maxW="100px"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                    title={c.radius != null ? String(c.radius) : undefined}
-                  >
-                    {c.radius}
-                  </TableCell>
-                  <TableCell textAlign={COL_ALIGN.enabled} py={3} px={4}>{c.enabled ? "Sim" : "Não"}</TableCell>
-                  <TableCell textAlign={COL_ALIGN.is_deleted} py={3} px={4}>{c.is_deleted ? "Sim" : "Não"}</TableCell>
+                  <TableCell textAlign={COL_ALIGN.enabled} py={3} px={4}>{c.enabled ? CAMPAIGN_MESSAGES.yes : CAMPAIGN_MESSAGES.no}</TableCell>
+                  <TableCell textAlign={COL_ALIGN.is_deleted} py={3} px={4}>{c.is_deleted ? CAMPAIGN_MESSAGES.yes : CAMPAIGN_MESSAGES.no}</TableCell>
                   <TableCell textAlign={COL_ALIGN.actions} py={3} px={4}>
                     <HStack justify={COL_ALIGN.actions === "right" ? "flex-end" : COL_ALIGN.actions === "center" ? "center" : "flex-start"} gap={2}>
                       <Button size="sm" variant="outline" onClick={() => setViewCampaign(c)}>
-                        Ver
+                        {CAMPAIGN_MESSAGES.view}
                       </Button>
                       {!c.is_deleted && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => setEditCampaign(c)}>
-                            Editar
+                            {CAMPAIGN_MESSAGES.edit}
                           </Button>
                           <Button size="sm" colorPalette="red" variant="outline" onClick={() => setDeleteCampaign(c)}>
-                            Excluir
+                            {CAMPAIGN_MESSAGES.delete}
                           </Button>
                         </>
                       )}
@@ -349,65 +324,43 @@ export function CampaignListScreen(): React.ReactNode {
 
       <HStack justify="space-between" flexWrap="wrap" gap={2}>
         <Text fontSize="sm" color="gray.600">
-          Mostrando {items.length === 0 ? 0 : start}–{end} de {total}
+          {CAMPAIGN_MESSAGES.showing(items.length === 0 ? 0 : start, end, total)}
         </Text>
         <HStack gap={2}>
-          <NativeSelectRoot
+          <SelectField
+            value={String(limit)}
+            onChange={(v) => {
+              setLimit(Number(v));
+              setPage(1);
+            }}
+            options={LIMIT_OPTIONS.map((n) => ({ value: String(n), label: CAMPAIGN_MESSAGES.perPage(n) }))}
             width="140px"
-            minW="140px"
-            position="relative"
-            borderWidth="1px"
-            borderRadius="md"
-            bg="white"
-            _focusWithin={{ borderColor: "blue.500", boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)" }}
-          >
-            <NativeSelectField
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
-                setPage(1);
-              }}
-              pr="8"
-              py="2"
-              pl="3"
-              width="100%"
-              border="none"
-              bg="transparent"
-              cursor="pointer"
-              appearance="none"
-            >
-              {LIMIT_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n} por página</option>
-              ))}
-            </NativeSelectField>
-            <Box
-              position="absolute"
-              right="2"
-              top="50%"
-              transform="translateY(-50%)"
-              pointerEvents="none"
-              color="gray.500"
-            >
-              <NativeSelectIndicator />
-            </Box>
-          </NativeSelectRoot>
+            minWidth="140px"
+          />
           <Button size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Anterior
+            {CAMPAIGN_MESSAGES.previous}
           </Button>
-          <Text fontSize="sm">Página {page} de {totalPages || 1}</Text>
+          <Text fontSize="sm">{CAMPAIGN_MESSAGES.pageOf(page, totalPages)}</Text>
           <Button size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-            Próxima
+            {CAMPAIGN_MESSAGES.next}
           </Button>
         </HStack>
       </HStack>
 
       <CampaignViewModal campaign={viewCampaign} onClose={() => setViewCampaign(null)} />
-      <CampaignFormModal
+      <CreateCampaignModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onSuccess={handleCreateSuccess}
       />
-      {editCampaign && (
+      <AddCampaignItemsModal
+        open={addItemsOpen}
+        onClose={() => { setAddItemsOpen(false); setAddItemsCampaignId(""); setAddItemsCampaignName(""); }}
+        onSuccess={handleAddItemsSuccess}
+        campaignId={addItemsCampaignId}
+        campaignName={addItemsCampaignName}
+      />
+      {editCampaign != null && (
         <CampaignFormModal
           open={true}
           onClose={() => setEditCampaign(null)}
@@ -419,9 +372,9 @@ export function CampaignListScreen(): React.ReactNode {
         open={deleteCampaign !== null}
         onClose={() => setDeleteCampaign(null)}
         onConfirm={handleDeleteConfirm}
-        title="Excluir campanha"
-        description="Deseja realmente excluir esta campanha? (exclusão lógica)"
-        confirmLabel="Excluir"
+        title={CAMPAIGN_MESSAGES.deleteTitle}
+        description={CAMPAIGN_MESSAGES.deleteDescription}
+        confirmLabel={CAMPAIGN_MESSAGES.deleteConfirm}
         variant="danger"
         isLoading={deleteLoading}
       />

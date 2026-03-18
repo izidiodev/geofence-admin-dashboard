@@ -36,8 +36,11 @@ export function ConfirmDialog({
   variant = "default",
 }: ConfirmDialogProps): ReactNode {
   const handleConfirm = async (): Promise<void> => {
-    await onConfirm();
-    onClose();
+    try {
+      await onConfirm();
+    } catch {
+      // Mantém o dialog aberto em caso de erro; o pai decide fechar apenas em sucesso.
+    }
   };
 
   return (

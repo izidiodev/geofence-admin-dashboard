@@ -1,5 +1,6 @@
 import { apiClient } from "@modules/core";
 import type { ApiResponse } from "@/types/api";
+import { normalizeErrorResponse } from "@/types/api";
 import type { PaginatedTypeResponse } from "@/types/type";
 
 export class TypeRepository {
@@ -10,8 +11,8 @@ export class TypeRepository {
       });
       return data;
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: ApiResponse<PaginatedTypeResponse> } };
-      if (axiosErr.response?.data) return axiosErr.response.data;
+      const axiosErr = err as { response?: { data?: unknown } };
+      if (axiosErr.response?.data != null) return normalizeErrorResponse(axiosErr.response.data);
       return { success: false, error: "Erro ao listar tipos." };
     }
   }

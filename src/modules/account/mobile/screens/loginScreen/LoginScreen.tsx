@@ -52,9 +52,15 @@ export function LoginScreen(): React.ReactNode {
               <Controller
                 name="email"
                 control={control}
-                rules={{ required: "E-mail é obrigatório" }}
+                rules={{
+                  required: "E-mail é obrigatório",
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Informe um e-mail válido",
+                  },
+                }}
                 render={({ field, fieldState }) => (
-                  <FormField label="E-mail" error={fieldState.error?.message}>
+                  <FormField label="E-mail" error={fieldState.error?.message} htmlFor="email">
                     <Input
                       id="email"
                       type="email"
@@ -70,7 +76,7 @@ export function LoginScreen(): React.ReactNode {
                 control={control}
                 rules={{ required: "Senha é obrigatória", minLength: { value: 6, message: "Mínimo 6 caracteres" } }}
                 render={({ field, fieldState }) => (
-                  <FormField label="Senha" error={fieldState.error?.message}>
+                  <FormField label="Senha" error={fieldState.error?.message} htmlFor="password">
                     <PasswordInput id="password" {...field} autoComplete="current-password" />
                   </FormField>
                 )}

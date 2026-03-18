@@ -2,12 +2,15 @@ import { apiClient } from "@modules/core";
 import type { ApiResponse } from "@/types/api";
 import { normalizeErrorResponse } from "@/types/api";
 import type {
-  Campaign,
+  CampaignHeader,
   CampaignListParams,
   CreateCampaignDTO,
-  CreateCampaignFullDTO,
+  CreateCampaignItemDTO,
+  DeliveryStatsResponse,
   PaginatedCampaignResponse,
   UpdateCampaignDTO,
+  CampaignWithItems,
+  CampaignItem,
 } from "@/types/campaign";
 
 function buildParams(params: CampaignListParams): Record<string, string | number | boolean> {
@@ -35,9 +38,25 @@ export class CampaignRepository {
     }
   }
 
-  async getById(id: string): Promise<ApiResponse<Campaign>> {
+  /** GET /api/campaigns/delivery-stats — top campanhas por delivery_count (para gráfico na home). */
+  async getDeliveryStats(params?: { limit?: number }): Promise<ApiResponse<DeliveryStatsResponse>> {
     try {
-      const { data } = await apiClient.get<ApiResponse<Campaign>>(`/campaigns/${id}`);
+      const limit = params?.limit != null ? Math.min(10, Math.max(1, params.limit)) : 10;
+      const { data } = await apiClient.get<ApiResponse<DeliveryStatsResponse>>(
+        "/campaigns/delivery-stats",
+        { params: { limit } }
+      );
+      return data;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: unknown } };
+      if (axiosErr.response?.data != null) return normalizeErrorResponse(axiosErr.response.data);
+      return { success: false, error: "Erro ao carregar métricas de campanhas." };
+    }
+  }
+
+  async getById(id: string): Promise<ApiResponse<CampaignWithItems>> {
+    try {
+      const { data } = await apiClient.get<ApiResponse<CampaignWithItems>>(`/campaigns/${id}`);
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown } };
@@ -46,9 +65,10 @@ export class CampaignRepository {
     }
   }
 
-  async create(dto: CreateCampaignDTO): Promise<ApiResponse<Campaign>> {
+  /** POST /api/campaigns — cria campanha (só cabeçalho). */
+  async create(dto: CreateCampaignDTO): Promise<ApiResponse<CampaignHeader>> {
     try {
-      const { data } = await apiClient.post<ApiResponse<Campaign>>("/campaigns", dto);
+      const { data } = await apiClient.post<ApiResponse<CampaignHeader>>("/campaigns", dto);
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown } };
@@ -57,24 +77,25 @@ export class CampaignRepository {
     }
   }
 
-  async createTriplet(dto: CreateCampaignFullDTO): Promise<
-    ApiResponse<{ campaign_group_id: string; enter: Campaign; dwell: Campaign; exit: Campaign }>
-  > {
+  /** POST /api/campaigns/:id/items — adiciona um item (enter, dwell ou exit). */
+  async addItem(campaignId: string, dto: CreateCampaignItemDTO): Promise<ApiResponse<CampaignItem>> {
     try {
-      const { data } = await apiClient.post<
-        ApiResponse<{ campaign_group_id: string; enter: Campaign; dwell: Campaign; exit: Campaign }>
-      >("/campaigns", dto);
+      const { data } = await apiClient.post<ApiResponse<CampaignItem>>(
+        `/campaigns/${campaignId}/items`,
+        dto
+      );
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown } };
       if (axiosErr.response?.data != null) return normalizeErrorResponse(axiosErr.response.data);
-      return { success: false, error: "Erro ao criar campanhas." };
+      return { success: false, error: "Erro ao adicionar item da campanha." };
     }
   }
 
-  async update(id: string, dto: UpdateCampaignDTO): Promise<ApiResponse<Campaign>> {
+  /** PUT /api/campaigns/:id — atualiza campanha e/ou itens já existentes. */
+  async update(id: string, dto: UpdateCampaignDTO): Promise<ApiResponse<CampaignWithItems>> {
     try {
-      const { data } = await apiClient.put<ApiResponse<Campaign>>(`/campaigns/${id}`, dto);
+      const { data } = await apiClient.put<ApiResponse<CampaignWithItems>>(`/campaigns/${id}`, dto);
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: unknown } };

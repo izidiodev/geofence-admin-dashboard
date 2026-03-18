@@ -15,7 +15,7 @@ const CampaignListScreen = lazy(() =>
   }))
 );
 const HomeScreen = lazy(() =>
-  import("@/layouts/AuthenticatedLayout/HomeScreen").then((m) => ({ default: m.HomeScreen }))
+  import("@modules/home/mobile/screens/HomeScreen/HomeScreen").then((m) => ({ default: m.HomeScreen }))
 );
 
 function Fallback(): React.ReactNode {

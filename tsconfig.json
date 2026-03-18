@@ -21,7 +21,8 @@
       "@/DS/*": ["./src/ds/*"],
       "@/Routes/*": ["./src/routes/*"],
       "@modules/*": ["./src/modules/*"]
-    }
+    },
+    "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src"]
 }

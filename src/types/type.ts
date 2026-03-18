@@ -1,3 +1,5 @@
+import type { PaginatedResponse } from "@/types/api";
+
 export interface Type {
   id: string;
   name: string;
@@ -6,10 +8,4 @@ export interface Type {
   updated_at: string;
 }
 
-export interface PaginatedTypeResponse {
-  items: Type[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+export type PaginatedTypeResponse = PaginatedResponse<Type>;

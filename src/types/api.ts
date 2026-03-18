@@ -16,6 +16,15 @@ export interface ApiErrorValidation {
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiErrorSingle | ApiErrorValidation;
 
+/** Resposta paginada genérica. */
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export function isApiErrorSingle(r: ApiResponse<unknown>): r is ApiErrorSingle {
   return !r.success && "error" in r && typeof (r as ApiErrorSingle).error === "string";
 }

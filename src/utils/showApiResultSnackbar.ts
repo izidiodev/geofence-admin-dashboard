@@ -9,7 +9,7 @@ export interface ShowApiResultSnackbarOptions {
 function getErrorMessage(result: ApiResponse<unknown>): string {
   if (isApiErrorSingle(result)) return result.error;
   if (isApiErrorValidation(result)) return result.errors.length > 0 ? result.errors.join("; ") : "Erro de validação.";
-  const r = result as Record<string, unknown>;
+  const r = result as unknown as Record<string, unknown>;
   if (typeof r?.detail === "string") return r.detail;
   if (typeof r?.message === "string") return r.message;
   return "Ocorreu um erro. Tente novamente.";
