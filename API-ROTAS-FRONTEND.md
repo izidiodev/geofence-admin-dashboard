@@ -301,10 +301,11 @@ Lista campanhas disponíveis (para o app), com paginação e filtros.
 |-------------|---------|-------------|----------------------------------------------------------|
 | `page`      | number  | Não         | Página (default: 1)                                      |
 | `limit`     | number  | Não         | Itens por página (default: 10, máx: 100)                |
-| `search`    | string  | Não         | Busca por nome e/ou city_uf                             |
-| `search_in` | string  | Não         | `name`, `city_uf` ou `both` (default: both)            |
+| `search`    | string  | Não         | **Igualdade exata** com o campo **`city_uf`** (normalizado: trim, minúsculas, sem acento). Ex.: enviar o mesmo valor cadastrado (`São Paulo/SP` não mistura com `São Bernardo/SP`). Sem `search`, lista todas as cidades (paginado). |
 | `is_deleted`| boolean | Não         | `true` ou `false`                                      |
 | `enabled`   | boolean | Não         | `true` ou `false`                                      |
+
+> O parâmetro `search_in` **não se aplica** a esta rota: o filtro é sempre por cidade (`city_uf`).
 
 ### Contador `delivery_count` (métrica de exposição)
 
