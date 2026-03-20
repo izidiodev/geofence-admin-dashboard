@@ -11,10 +11,12 @@ export default defineConfig({
     setupFiles: "./src/test/setupTests.ts",
   },
   resolve: {
+    // Ordem importa: `@` casa com qualquer `@/...`. Se vier antes de `@/Routes` e `@/DS`,
+    // no Linux (Vercel) vira `src/Routes` e `src/DS` — pastas reais são `routes` e `ds`.
     alias: {
-      "@": path.resolve(__dirname, "./src"),
       "@/DS": path.resolve(__dirname, "./src/ds"),
       "@/Routes": path.resolve(__dirname, "./src/routes"),
+      "@": path.resolve(__dirname, "./src"),
       "@modules": path.resolve(__dirname, "./src/modules"),
     },
   },

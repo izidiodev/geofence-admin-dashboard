@@ -17,10 +17,10 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
       "@/DS/*": ["./src/ds/*"],
       "@/Routes/*": ["./src/routes/*"],
-      "@modules/*": ["./src/modules/*"]
+      "@modules/*": ["./src/modules/*"],
+      "@/*": ["./src/*"]
     },
     "types": ["vitest/globals", "@testing-library/jest-dom"]
   },
