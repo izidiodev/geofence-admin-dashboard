@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
 import type { CampaignHeader, CampaignWithItems } from "@/types/campaign";
+import { CAMPAIGN_MESSAGES } from "@/constants/messages";
 
 interface CampaignViewModalProps {
   campaign: CampaignHeader | null;
@@ -59,8 +60,10 @@ export function CampaignViewModal({ campaign, onClose }: CampaignViewModalProps)
             ) : full ? (
               <VStack align="stretch" gap={4}>
                 <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px" }}>
-                  <dt><strong>Cidade/UF</strong></dt>
-                  <dd>{full.city_uf ?? "—"}</dd>
+                  <dt><strong>{CAMPAIGN_MESSAGES.colCity}</strong></dt>
+                  <dd>{full.city ?? "—"}</dd>
+                  <dt><strong>{CAMPAIGN_MESSAGES.colUf}</strong></dt>
+                  <dd>{full.uf ?? "—"}</dd>
                   <dt><strong>Data de expiração</strong></dt>
                   <dd>{full.exp_date ? new Date(full.exp_date).toLocaleDateString("pt-BR") : "—"}</dd>
                   <dt><strong>Ativa</strong></dt>

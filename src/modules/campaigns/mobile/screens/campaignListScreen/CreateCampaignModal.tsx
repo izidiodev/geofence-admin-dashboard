@@ -17,11 +17,14 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import { CAMPAIGN_VALIDATION, isValidDateString } from "@modules/campaigns/constants/campaignValidation";
+import { isValidDateString } from "@modules/campaigns/constants/campaignValidation";
+import { validateCampaignCityUfCreate } from "@modules/campaigns/constants/campaignLocationValidation";
 import type { CreateCampaignDTO } from "@/types/campaign";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
 import { FormField } from "@/DS/FormField/FormField";
+import { CityUfCombobox } from "@/DS/CityUfCombobox/CityUfCombobox";
 import { CAMPAIGN_MESSAGES } from "@/constants/messages";
+import { CAMPAIGN_VALIDATION } from "@modules/campaigns/constants/campaignValidation";
 
 interface CreateCampaignModalProps {
   open: boolean;
@@ -32,14 +35,16 @@ interface CreateCampaignModalProps {
 interface FormValues {
   name: string;
   exp_date: string;
-  city_uf: string;
+  city: string;
+  uf: string;
   enabled: boolean;
 }
 
 const defaultValues: FormValues = {
   name: "",
   exp_date: "",
-  city_uf: "",
+  city: "",
+  uf: "",
   enabled: true,
 };
 
@@ -49,14 +54,15 @@ export function CreateCampaignModal({
   onSuccess,
 }: CreateCampaignModalProps): React.ReactNode {
   const [loading, setLoading] = useState(false);
-  const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues });
+  const { control, handleSubmit, reset, getValues, trigger } = useForm<FormValues>({ defaultValues });
 
   const onSubmit = async (values: FormValues): Promise<void> => {
     setLoading(true);
     const dto: CreateCampaignDTO = {
       name: values.name.trim(),
       exp_date: values.exp_date.trim(),
-      city_uf: values.city_uf.trim(),
+      city: values.city.trim(),
+      uf: values.uf.trim().toUpperCase(),
       enabled: values.enabled,
     };
     const result = await campaignController.create(dto);
@@ -79,7 +85,7 @@ export function CreateCampaignModal({
             <DialogCloseTrigger />
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <DialogBody>
+            <DialogBody overflow="visible">
               <Text color="gray.600" mb={4} fontSize="sm">
                 {CAMPAIGN_MESSAGES.createCampaignHeaderSubtitle}
               </Text>
@@ -118,23 +124,39 @@ export function CreateCampaignModal({
                   )}
                 />
                 <Controller
-                  name="city_uf"
+                  name="uf"
                   control={control}
-                  rules={{
-                    required: CAMPAIGN_MESSAGES.cityUfRequired,
-                    validate: (v) => {
-                      const s = typeof v === "string" ? v.trim() : "";
-                      if (!s) return CAMPAIGN_MESSAGES.cityUfRequired;
-                      if (s.length > CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH) {
-                        return CAMPAIGN_MESSAGES.cityUfMax(CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH);
-                      }
-                      return true;
-                    },
-                  }}
-                  render={({ field, fieldState }) => (
-                    <FormField label={CAMPAIGN_MESSAGES.cityUf} error={fieldState.error?.message} htmlFor="create-city">
-                      <Input id="create-city" {...field} placeholder="Ex: São Paulo - SP" size="sm" maxLength={CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH + 1} />
-                    </FormField>
+                  render={({ field: ufField }) => (
+                    <Controller
+                      name="city"
+                      control={control}
+                      rules={{
+                        validate: async () =>
+                          validateCampaignCityUfCreate(getValues("city"), getValues("uf")),
+                      }}
+                      render={({ field: cityField, fieldState }) => (
+                        <FormField
+                          label={CAMPAIGN_MESSAGES.locationComboLabel}
+                          error={fieldState.error?.message}
+                          htmlFor="create-city"
+                        >
+                          <CityUfCombobox
+                            id="create-city"
+                            city={cityField.value}
+                            uf={ufField.value}
+                            onChange={(v) => {
+                              cityField.onChange(v.city);
+                              ufField.onChange(v.uf);
+                              void trigger("city");
+                            }}
+                            onBlur={() => {
+                              cityField.onBlur();
+                              ufField.onBlur();
+                            }}
+                          />
+                        </FormField>
+                      )}
+                    />
                   )}
                 />
                 <Controller
@@ -145,6 +167,9 @@ export function CreateCampaignModal({
                       id="create-enabled"
                       checked={field.value}
                       onCheckedChange={(e) => field.onChange(Boolean(e.checked))}
+                      alignSelf="flex-start"
+                      width="fit-content"
+                      maxW="100%"
                     >
                       <Checkbox.HiddenInput />
                       <Checkbox.Control />

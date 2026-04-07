@@ -11,6 +11,8 @@ describe("campaignValidation", () => {
   describe("CAMPAIGN_VALIDATION", () => {
     it("expõe constantes esperadas", () => {
       expect(CAMPAIGN_VALIDATION.NAME_MAX_LENGTH).toBe(255);
+      expect(CAMPAIGN_VALIDATION.CITY_MAX_LENGTH).toBe(255);
+      expect(CAMPAIGN_VALIDATION.UF_MAX_LENGTH).toBe(10);
       expect(CAMPAIGN_VALIDATION.RADIUS_MIN).toBe(1);
       expect(CAMPAIGN_VALIDATION.RADIUS_MAX).toBe(100000);
       expect(CAMPAIGN_VALIDATION.LAT_LONG_MIN).toBe(-999.9999999);

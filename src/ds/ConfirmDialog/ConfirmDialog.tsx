@@ -39,7 +39,6 @@ export function ConfirmDialog({
     try {
       await onConfirm();
     } catch {
-      // Mantém o dialog aberto em caso de erro; o pai decide fechar apenas em sucesso.
     }
   };
 

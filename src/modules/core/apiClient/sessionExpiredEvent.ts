@@ -1,6 +1,5 @@
 export const SESSION_EXPIRED_EVENT = "geofence_admin_session_expired";
 
-/** Disparado após logout manual (mesma aba); useAuth escuta para atualizar estado. */
 export const AUTH_LOGOUT_EVENT = "geofence_admin_auth_logout";
 
 export function dispatchSessionExpired(): void {

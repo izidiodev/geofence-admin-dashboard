@@ -301,7 +301,7 @@ Lista campanhas disponíveis (para o app), com paginação e filtros.
 |-------------|---------|-------------|----------------------------------------------------------|
 | `page`      | number  | Não         | Página (default: 1)                                      |
 | `limit`     | number  | Não         | Itens por página (default: 10, máx: 100)                |
-| `search`    | string  | Não         | **Igualdade exata** com o campo **`city_uf`** (normalizado: trim, minúsculas, sem acento). Ex.: enviar o mesmo valor cadastrado (`São Paulo/SP` não mistura com `São Bernardo/SP`). Sem `search`, lista todas as cidades (paginado). |
+| `search`    | string  | Não         | **Nome completo da cidade** (usa o trecho antes de `/` em `city_uf`). Normalização: minúsculas, sem acento, espaços colapsados — `sao paulo` casa com `São Paulo`, `São Paulo/SP`; **não** casa com `São Bernardo`; **não** aceita substring (`sao` sozinho não bate). Sem `search`, lista todas as cidades (paginado). |
 | `is_deleted`| boolean | Não         | `true` ou `false`                                      |
 | `enabled`   | boolean | Não         | `true` ou `false`                                      |
 
@@ -315,7 +315,7 @@ A cada chamada bem-sucedida a este endpoint, **para cada campanha listada na pá
 - **Não** incrementa em `GET /api/campaigns` nem em `GET /api/campaigns/:id` (apenas leitura do total acumulado).
 
 ### Resposta 200
-Mesmo formato de lista paginada de campanhas (resumo, sem itens), incluindo o campo **`delivery_count`** em cada item (ver exemplo abaixo).
+Lista paginada: cada item inclui dados da campanha, **`delivery_count`** e as **geofences** `enter`, `dwell` e `exit` (mesmo formato de `GET /api/campaigns/:id`). Cada um pode ser `null` se ainda não cadastrado no admin.
 
 ```json
 {
@@ -326,12 +326,25 @@ Mesmo formato de lista paginada de campanhas (resumo, sem itens), incluindo o ca
         "id": "uuid",
         "name": "Nome da campanha",
         "exp_date": "2025-12-31T23:59:59.000Z",
-        "city_uf": "Cidade - UF",
+        "city_uf": "São Paulo/SP",
         "enabled": true,
         "created_at": "2025-01-01T00:00:00.000Z",
         "updated_at": "2025-01-01T00:00:00.000Z",
         "is_deleted": false,
-        "delivery_count": 1523
+        "delivery_count": 1523,
+        "enter": {
+          "id": "uuid",
+          "title": "Entrada",
+          "description": null,
+          "type_id": "uuid-tipo-enter",
+          "lat": "-23.55",
+          "long": "-46.63",
+          "radius": 500,
+          "created_at": "2025-01-01T00:00:00.000Z",
+          "updated_at": "2025-01-01T00:00:00.000Z"
+        },
+        "dwell": { "...": "..." },
+        "exit": { "...": "..." }
       }
     ],
     "total": 20,
@@ -341,6 +354,8 @@ Mesmo formato de lista paginada de campanhas (resumo, sem itens), incluindo o ca
   }
 }
 ```
+
+> **Mudança de contrato (produção):** antes cada item era só o resumo; agora inclui `enter`, `dwell` e `exit`. Clientes que ignoram chaves desconhecidas seguem ok; quem valida schema estrito precisa atualizar.
 
 ---
 

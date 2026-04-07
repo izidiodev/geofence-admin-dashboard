@@ -16,7 +16,6 @@ export interface ApiErrorValidation {
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiErrorSingle | ApiErrorValidation;
 
-/** Resposta paginada genérica. */
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
@@ -33,7 +32,6 @@ export function isApiErrorValidation(r: ApiResponse<unknown>): r is ApiErrorVali
   return !r.success && "errors" in r && Array.isArray((r as ApiErrorValidation).errors);
 }
 
-/** Converte qualquer corpo de erro (400, 422, etc.) para ApiErrorSingle. */
 export function normalizeErrorResponse(data: unknown): ApiErrorSingle {
   if (data != null && typeof data === "object" && "success" in data && (data as { success: boolean }).success === false) {
     const r = data as Record<string, unknown>;

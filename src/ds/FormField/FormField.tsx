@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 interface FormFieldProps {
   label: string;
   error?: string;
-  /** Id do input associado; associa o label ao input para acessibilidade e clique. */
   htmlFor?: string;
   children: ReactNode;
 }

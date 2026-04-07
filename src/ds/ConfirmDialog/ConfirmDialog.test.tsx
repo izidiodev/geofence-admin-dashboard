@@ -28,7 +28,6 @@ describe("ConfirmDialog", () => {
     await waitFor(() => {
       expect(onConfirm).toHaveBeenCalled();
     });
-    // onClose não deve ser chamado pelo dialog quando onConfirm falha (quem fecha é o pai ao mudar estado)
     expect(onClose).not.toHaveBeenCalled();
   });
 

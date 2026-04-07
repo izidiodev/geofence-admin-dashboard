@@ -38,7 +38,6 @@ export class CampaignRepository {
     }
   }
 
-  /** GET /api/campaigns/delivery-stats — top campanhas por delivery_count (para gráfico na home). */
   async getDeliveryStats(params?: { limit?: number }): Promise<ApiResponse<DeliveryStatsResponse>> {
     try {
       const limit = params?.limit != null ? Math.min(10, Math.max(1, params.limit)) : 10;
@@ -65,7 +64,6 @@ export class CampaignRepository {
     }
   }
 
-  /** POST /api/campaigns — cria campanha (só cabeçalho). */
   async create(dto: CreateCampaignDTO): Promise<ApiResponse<CampaignHeader>> {
     try {
       const { data } = await apiClient.post<ApiResponse<CampaignHeader>>("/campaigns", dto);
@@ -77,7 +75,6 @@ export class CampaignRepository {
     }
   }
 
-  /** POST /api/campaigns/:id/items — adiciona um item (enter, dwell ou exit). */
   async addItem(campaignId: string, dto: CreateCampaignItemDTO): Promise<ApiResponse<CampaignItem>> {
     try {
       const { data } = await apiClient.post<ApiResponse<CampaignItem>>(
@@ -92,7 +89,6 @@ export class CampaignRepository {
     }
   }
 
-  /** PUT /api/campaigns/:id — atualiza campanha e/ou itens já existentes. */
   async update(id: string, dto: UpdateCampaignDTO): Promise<ApiResponse<CampaignWithItems>> {
     try {
       const { data } = await apiClient.put<ApiResponse<CampaignWithItems>>(`/campaigns/${id}`, dto);

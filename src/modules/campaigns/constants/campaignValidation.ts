@@ -1,12 +1,6 @@
-/**
- * Constantes e validações alinhadas ao backend (ms-geofence-admin CampaignValidation).
- * Use para resguardar o banco e dar feedback imediato no front.
- */
-/** decimal(10,7) no banco: máx. 999,9999999 */
 const LAT_LONG_MAX = 999.9999999;
 const LAT_LONG_MIN = -999.9999999;
 
-/** Lat/long para itens de geofence (API: lat -90..90, long -180..180). */
 export const ITEM_LAT_MIN = -90;
 export const ITEM_LAT_MAX = 90;
 export const ITEM_LONG_MIN = -180;
@@ -14,10 +8,10 @@ export const ITEM_LONG_MAX = 180;
 
 export const CAMPAIGN_VALIDATION = {
   NAME_MAX_LENGTH: 255,
-  /** Título do item (enter/dwell/exit). */
   TITLE_MAX_LENGTH: 255,
   DESCRIPTION_MAX_LENGTH: 500,
-  CITY_UF_MAX_LENGTH: 255,
+  CITY_MAX_LENGTH: 255,
+  UF_MAX_LENGTH: 10,
   RADIUS_MIN: 1,
   RADIUS_MAX: 100000,
   LAT_LONG_MIN,
@@ -44,7 +38,6 @@ export function isIntegerInRange(
   return Number.isInteger(n) && n >= min && n <= max;
 }
 
-/** Valida número decimal no intervalo [min, max] (ex.: lat/long decimal(10,7)). */
 export function isDecimalInRange(
   value: unknown,
   min: number,

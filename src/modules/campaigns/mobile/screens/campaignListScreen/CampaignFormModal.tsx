@@ -32,7 +32,9 @@ import type { CampaignHeader, CampaignWithItems, UpdateCampaignDTO } from "@/typ
 import type { Type } from "@/types/type";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
 import { FormField } from "@/DS/FormField/FormField";
+import { CityUfCombobox } from "@/DS/CityUfCombobox/CityUfCombobox";
 import { CAMPAIGN_MESSAGES } from "@/constants/messages";
+import { validateCampaignCityUfEdit } from "@modules/campaigns/constants/campaignLocationValidation";
 
 type EventKind = "enter" | "dwell" | "exit";
 
@@ -71,7 +73,8 @@ interface CampaignFormModalProps {
 interface FormValues {
   name: string;
   exp_date: string;
-  city_uf: string;
+  city: string;
+  uf: string;
   enabled: boolean;
   enter_title: string;
   enter_description: string;
@@ -106,11 +109,12 @@ export function CampaignFormModal({
   const typeDwell = useMemo(() => findTypeByKind(typesFromApi, "dwell"), [typesFromApi]);
   const typeExit = useMemo(() => findTypeByKind(typesFromApi, "exit"), [typesFromApi]);
 
-  const { control, handleSubmit, reset } = useForm<FormValues>({
+  const { control, handleSubmit, reset, getValues, trigger } = useForm<FormValues>({
     defaultValues: {
       name: "",
       exp_date: "",
-      city_uf: "",
+      city: "",
+      uf: "",
       enabled: true,
       enter_title: "",
       enter_description: "",
@@ -159,7 +163,8 @@ export function CampaignFormModal({
           reset({
             name: c.name,
             exp_date: c.exp_date ? c.exp_date.slice(0, 10) : "",
-            city_uf: c.city_uf ?? "",
+            city: c.city ?? "",
+            uf: c.uf ?? "",
             enabled: c.enabled,
             enter_title: c.enter?.title ?? "",
             enter_description: c.enter?.description ?? "",
@@ -189,7 +194,8 @@ export function CampaignFormModal({
       const dto: UpdateCampaignDTO = {
         name: values.name.trim() || undefined,
         exp_date: values.exp_date || undefined,
-        city_uf: values.city_uf.trim() || undefined,
+        city: values.city.trim() || undefined,
+        uf: values.uf.trim() ? values.uf.trim().toUpperCase() : undefined,
         enabled: values.enabled,
       };
       if (fullCampaign.enter) {
@@ -244,7 +250,7 @@ export function CampaignFormModal({
             <DialogCloseTrigger />
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
-            <DialogBody>
+            <DialogBody overflow="visible">
               {loadingCampaign ? (
                 <Box py={8} display="flex" justifyContent="center">
                   <Spinner size="lg" />
@@ -280,19 +286,64 @@ export function CampaignFormModal({
                         )}
                       />
                       <Controller
-                        name="city_uf"
+                        name="uf"
                         control={control}
-                        render={({ field, fieldState }) => (
-                          <FormField label={CAMPAIGN_MESSAGES.cityUf} error={fieldState.error?.message} htmlFor="edit-city">
-                            <Input id="edit-city" {...field} size="sm" maxLength={CAMPAIGN_VALIDATION.CITY_UF_MAX_LENGTH + 1} />
-                          </FormField>
+                        render={({ field: ufField }) => (
+                          <Controller
+                            name="city"
+                            control={control}
+                            rules={{
+                              validate: async () =>
+                                validateCampaignCityUfEdit(getValues("city"), getValues("uf"), {
+                                  city: fullCampaign?.city ?? null,
+                                  uf: fullCampaign?.uf ?? null,
+                                }),
+                            }}
+                            render={({ field: cityField, fieldState }) => (
+                              <FormField
+                                label={CAMPAIGN_MESSAGES.locationComboLabel}
+                                error={fieldState.error?.message}
+                                htmlFor="edit-city"
+                              >
+                                <CityUfCombobox
+                                  id="edit-city"
+                                  city={cityField.value}
+                                  uf={ufField.value}
+                                  onChange={(v) => {
+                                    cityField.onChange(v.city);
+                                    ufField.onChange(v.uf);
+                                    void trigger("city");
+                                  }}
+                                  onBlur={() => {
+                                    cityField.onBlur();
+                                    ufField.onBlur();
+                                  }}
+                                  allowUnlisted={
+                                    fullCampaign != null
+                                      ? {
+                                          city: fullCampaign.city ?? "",
+                                          uf: fullCampaign.uf ?? "",
+                                        }
+                                      : null
+                                  }
+                                />
+                              </FormField>
+                            )}
+                          />
                         )}
                       />
                       <Controller
                         name="enabled"
                         control={control}
                         render={({ field }) => (
-                          <Checkbox.Root id="edit-enabled" checked={field.value} onCheckedChange={(e) => field.onChange(Boolean(e.checked))}>
+                          <Checkbox.Root
+                            id="edit-enabled"
+                            checked={field.value}
+                            onCheckedChange={(e) => field.onChange(Boolean(e.checked))}
+                            alignSelf="flex-start"
+                            width="fit-content"
+                            maxW="100%"
+                          >
                             <Checkbox.HiddenInput />
                             <Checkbox.Control />
                             <Checkbox.Label>{CAMPAIGN_MESSAGES.active}</Checkbox.Label>

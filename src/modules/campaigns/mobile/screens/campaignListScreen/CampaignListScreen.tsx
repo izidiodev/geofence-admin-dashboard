@@ -32,16 +32,16 @@ import { CampaignViewModal } from "./CampaignViewModal";
 
 const LIMIT_OPTIONS = [10, 20, 50];
 
-/** Alinhamento das colunas (listagem retorna só cabeçalho, sem itens). */
 const COL_ALIGN = {
   name: "left" as const,
-  city_uf: "center" as const,
+  city: "left" as const,
+  uf: "center" as const,
   enabled: "center" as const,
   is_deleted: "center" as const,
   actions: "right" as const,
 };
 
-type SearchField = "name" | "city_uf";
+type SearchField = "name" | "city";
 
 export function CampaignListScreen(): React.ReactNode {
   const [items, setItems] = useState<CampaignHeader[]>([]);
@@ -151,7 +151,7 @@ export function CampaignListScreen(): React.ReactNode {
           onChange={(v) => setSearchField(v as SearchField)}
           options={[
             { value: "name", label: CAMPAIGN_MESSAGES.searchByName },
-            { value: "city_uf", label: CAMPAIGN_MESSAGES.searchByCity },
+            { value: "city", label: CAMPAIGN_MESSAGES.searchByCity },
           ]}
           width="160px"
         />
@@ -224,19 +224,35 @@ export function CampaignListScreen(): React.ReactNode {
               </TableColumnHeader>
               <TableColumnHeader
                 scope="col"
-                textAlign={COL_ALIGN.city_uf}
+                textAlign={COL_ALIGN.city}
                 py={3}
                 px={4}
                 fontWeight="semibold"
                 color="gray.700"
                 borderBottomWidth="1px"
                 borderColor="gray.200"
-                maxW="160px"
+                maxW="200px"
                 overflow="hidden"
                 textOverflow="ellipsis"
                 whiteSpace="nowrap"
               >
-                {CAMPAIGN_MESSAGES.colCityUf}
+                {CAMPAIGN_MESSAGES.colCity}
+              </TableColumnHeader>
+              <TableColumnHeader
+                scope="col"
+                textAlign={COL_ALIGN.uf}
+                py={3}
+                px={4}
+                fontWeight="semibold"
+                color="gray.700"
+                borderBottomWidth="1px"
+                borderColor="gray.200"
+                maxW="72px"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+              >
+                {CAMPAIGN_MESSAGES.colUf}
               </TableColumnHeader>
               <TableColumnHeader scope="col" textAlign={COL_ALIGN.enabled} py={3} px={4} fontWeight="semibold" color="gray.700" borderBottomWidth="1px" borderColor="gray.200">
                 {CAMPAIGN_MESSAGES.colActive}
@@ -252,13 +268,13 @@ export function CampaignListScreen(): React.ReactNode {
           <TableBody>
             {loading && items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} textAlign="center" py={8} color="gray.500">
+                <TableCell colSpan={6} textAlign="center" py={8} color="gray.500">
                   {CAMPAIGN_MESSAGES.loading}
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} textAlign="center" py={8} color="gray.500">
+                <TableCell colSpan={6} textAlign="center" py={8} color="gray.500">
                   {CAMPAIGN_MESSAGES.noCampaigns}
                 </TableCell>
               </TableRow>
@@ -285,16 +301,28 @@ export function CampaignListScreen(): React.ReactNode {
                     {c.name}
                   </TableCell>
                   <TableCell
-                    textAlign={COL_ALIGN.city_uf}
+                    textAlign={COL_ALIGN.city}
                     py={3}
                     px={4}
-                    maxW="160px"
+                    maxW="200px"
                     overflow="hidden"
                     textOverflow="ellipsis"
                     whiteSpace="nowrap"
-                    title={c.city_uf ?? undefined}
+                    title={c.city ?? undefined}
                   >
-                    {c.city_uf ?? "—"}
+                    {c.city ?? "—"}
+                  </TableCell>
+                  <TableCell
+                    textAlign={COL_ALIGN.uf}
+                    py={3}
+                    px={4}
+                    maxW="72px"
+                    overflow="hidden"
+                    textOverflow="ellipsis"
+                    whiteSpace="nowrap"
+                    title={c.uf ?? undefined}
+                  >
+                    {c.uf ?? "—"}
                   </TableCell>
                   <TableCell textAlign={COL_ALIGN.enabled} py={3} px={4}>{c.enabled ? CAMPAIGN_MESSAGES.yes : CAMPAIGN_MESSAGES.no}</TableCell>
                   <TableCell textAlign={COL_ALIGN.is_deleted} py={3} px={4}>{c.is_deleted ? CAMPAIGN_MESSAGES.yes : CAMPAIGN_MESSAGES.no}</TableCell>

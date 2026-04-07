@@ -13,7 +13,6 @@ function safeSetItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {
-    // quota or disabled
   }
 }
 
@@ -21,7 +20,6 @@ function safeRemoveItem(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // ignore
   }
 }
 
@@ -52,7 +50,6 @@ export const localStorageController = {
     try {
       localStorage.clear();
     } catch {
-      // ignore
     }
   },
 
