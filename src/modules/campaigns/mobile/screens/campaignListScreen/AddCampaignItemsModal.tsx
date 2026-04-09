@@ -18,7 +18,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import { CAMPAIGN_VALIDATION, isIntegerInRange } from "@modules/campaigns/constants/campaignValidation";
+import { CAMPAIGN_VALIDATION } from "@modules/campaigns/constants/campaignValidation";
 import { typeRepository } from "@modules/types/business/main";
 import type { CreateCampaignItemDTO } from "@/types/campaign";
 import type { Type } from "@/types/type";
@@ -64,25 +64,19 @@ interface AddCampaignItemsModalProps {
 interface FormValues {
   enter_title: string;
   enter_description: string;
-  enter_radius: string;
   dwell_title: string;
   dwell_description: string;
-  dwell_radius: string;
   exit_title: string;
   exit_description: string;
-  exit_radius: string;
 }
 
 const defaultValues: FormValues = {
   enter_title: "",
   enter_description: "",
-  enter_radius: "",
   dwell_title: "",
   dwell_description: "",
-  dwell_radius: "",
   exit_title: "",
   exit_description: "",
-  exit_radius: "",
 };
 
 export function AddCampaignItemsModal({
@@ -131,7 +125,6 @@ export function AddCampaignItemsModal({
             title: values.enter_title.trim(),
             description: values.enter_description.trim() || undefined,
             type_id: typeEnter.id,
-            radius: Math.round(Number(values.enter_radius)),
           },
         },
         {
@@ -140,7 +133,6 @@ export function AddCampaignItemsModal({
             title: values.dwell_title.trim(),
             description: values.dwell_description.trim() || undefined,
             type_id: typeDwell.id,
-            radius: Math.round(Number(values.dwell_radius)),
           },
         },
         {
@@ -149,7 +141,6 @@ export function AddCampaignItemsModal({
             title: values.exit_title.trim(),
             description: values.exit_description.trim() || undefined,
             type_id: typeExit.id,
-            radius: Math.round(Number(values.exit_radius)),
           },
         },
       ];
@@ -255,28 +246,6 @@ function ItemSection({
           render={({ field, fieldState }) => (
             <FormField label={CAMPAIGN_MESSAGES.itemDescription} error={fieldState.error?.message} htmlFor={`${prefix}-desc`}>
               <Input id={`${prefix}-desc`} {...field} placeholder="Opcional" size="sm" maxLength={CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_radius` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Raio é obrigatório",
-            validate: (v) =>
-              isIntegerInRange(v, CAMPAIGN_VALIDATION.RADIUS_MIN, CAMPAIGN_VALIDATION.RADIUS_MAX) ||
-              `Raio entre ${CAMPAIGN_VALIDATION.RADIUS_MIN} e ${CAMPAIGN_VALIDATION.RADIUS_MAX}`,
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Raio (m)" error={fieldState.error?.message} htmlFor={`${prefix}-radius`}>
-              <Input
-                id={`${prefix}-radius`}
-                type="number"
-                {...field}
-                size="sm"
-                min={CAMPAIGN_VALIDATION.RADIUS_MIN}
-                max={CAMPAIGN_VALIDATION.RADIUS_MAX}
-              />
             </FormField>
           )}
         />

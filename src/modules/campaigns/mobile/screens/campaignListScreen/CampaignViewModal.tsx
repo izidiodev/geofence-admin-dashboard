@@ -14,7 +14,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import type { CampaignHeader, CampaignWithItems } from "@/types/campaign";
+import type { CampaignHeader, CampaignItem, CampaignWithItems } from "@/types/campaign";
 import { CAMPAIGN_MESSAGES } from "@/constants/messages";
 
 interface CampaignViewModalProps {
@@ -64,10 +64,12 @@ export function CampaignViewModal({ campaign, onClose }: CampaignViewModalProps)
                   <dd>{full.city ?? "—"}</dd>
                   <dt><strong>{CAMPAIGN_MESSAGES.colUf}</strong></dt>
                   <dd>{full.uf ?? "—"}</dd>
-                  <dt><strong>Latitude (centro)</strong></dt>
-                  <dd>{full.lat ?? "—"}</dd>
-                  <dt><strong>Longitude (centro)</strong></dt>
-                  <dd>{full.long ?? "—"}</dd>
+                  <dt><strong>Latitude</strong></dt>
+                  <dd>{full.lat != null ? String(full.lat) : "—"}</dd>
+                  <dt><strong>Longitude</strong></dt>
+                  <dd>{full.long != null ? String(full.long) : "—"}</dd>
+                  <dt><strong>{CAMPAIGN_MESSAGES.colRadius}</strong></dt>
+                  <dd>{full.radius != null ? String(full.radius) : "—"}</dd>
                   <dt><strong>Data de expiração</strong></dt>
                   <dd>{full.exp_date ? new Date(full.exp_date).toLocaleDateString("pt-BR") : "—"}</dd>
                   <dt><strong>Ativa</strong></dt>
@@ -103,26 +105,16 @@ export function CampaignViewModal({ campaign, onClose }: CampaignViewModalProps)
   );
 }
 
-function ItemBlock({
-  label,
-  item,
-}: {
-  label: string;
-  item: { title: string; description: string | null; radius: number };
-}): React.ReactNode {
+function ItemBlock({ label, item }: { label: string; item: CampaignItem }): React.ReactNode {
   return (
     <Box p={3} borderRadius="md" bg="gray.50" borderWidth="1px" borderColor="gray.200">
       <Text fontWeight="medium" color="gray.800" mb={2}>{label}: {item.title}</Text>
-      <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", fontSize: "0.875rem" }}>
-        {item.description && (
-          <>
-            <dt><strong>Descrição</strong></dt>
-            <dd>{item.description}</dd>
-          </>
-        )}
-        <dt><strong>Raio (m)</strong></dt>
-        <dd>{item.radius}</dd>
-      </dl>
+      {item.description ? (
+        <dl style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "4px 12px", fontSize: "0.875rem" }}>
+          <dt><strong>Descrição</strong></dt>
+          <dd>{item.description}</dd>
+        </dl>
+      ) : null}
     </Box>
   );
 }

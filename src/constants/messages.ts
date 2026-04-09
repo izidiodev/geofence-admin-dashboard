@@ -35,7 +35,7 @@ export const CAMPAIGN_MESSAGES = {
   createCampaign: "Cadastrar campanha",
   createCampaignHeaderTitle: "Nova campanha",
   createCampaignHeaderSubtitle:
-    "Preencha os dados da campanha e o centro (latitude/longitude). Em seguida você adicionará os itens (Entrada, Permanência, Saída) com raio.",
+    "Preencha os dados da campanha, latitude, longitude e raio (m) da geofence. Em seguida você adicionará os itens (Entrada, Permanência, Saída): só título e descrição.",
   campaignName: "Nome",
   campaignNameRequired: "Nome é obrigatório",
   campaignNameMax: (n: number) => `Máximo ${n} caracteres`,
@@ -55,7 +55,7 @@ export const CAMPAIGN_MESSAGES = {
   active: "Ativa",
   campaignCreated: "Campanha criada. Adicione os itens (Entrada, Permanência, Saída).",
   addItemsTitle: "Itens da campanha",
-  addItemsSubtitle: "Preencha título, descrição e raio (m) de cada item. O centro geográfico é o da campanha (latitude/longitude no cadastro).",
+  addItemsSubtitle: "Preencha título e descrição de cada item. A geofence (coordenadas e raio) já está no cadastro da campanha.",
   itemTitle: "Título",
   itemTitleRequired: "Título é obrigatório",
   itemDescription: "Descrição",

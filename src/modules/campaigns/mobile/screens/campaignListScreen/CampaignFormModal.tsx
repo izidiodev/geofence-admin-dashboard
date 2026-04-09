@@ -22,9 +22,9 @@ import {
 import { campaignController } from "@modules/campaigns/business";
 import {
   CAMPAIGN_VALIDATION,
-  isIntegerInRange,
   isValidDateString,
   validateCampaignLatLong,
+  validateCampaignRadius,
 } from "@modules/campaigns/constants/campaignValidation";
 import { typeRepository } from "@modules/types/business/main";
 import type { CampaignHeader, CampaignWithItems, UpdateCampaignDTO } from "@/types/campaign";
@@ -76,16 +76,14 @@ interface FormValues {
   uf: string;
   lat: string;
   long: string;
+  radius: string;
   enabled: boolean;
   enter_title: string;
   enter_description: string;
-  enter_radius: string;
   dwell_title: string;
   dwell_description: string;
-  dwell_radius: string;
   exit_title: string;
   exit_description: string;
-  exit_radius: string;
 }
 
 export function CampaignFormModal({
@@ -112,16 +110,14 @@ export function CampaignFormModal({
       uf: "",
       lat: "",
       long: "",
+      radius: "",
       enabled: true,
       enter_title: "",
       enter_description: "",
-      enter_radius: "",
       dwell_title: "",
       dwell_description: "",
-      dwell_radius: "",
       exit_title: "",
       exit_description: "",
-      exit_radius: "",
     },
   });
 
@@ -158,16 +154,14 @@ export function CampaignFormModal({
             uf: c.uf ?? "",
             lat: toStr(c.lat),
             long: toStr(c.long),
+            radius: String(c.radius),
             enabled: c.enabled,
             enter_title: c.enter?.title ?? "",
             enter_description: c.enter?.description ?? "",
-            enter_radius: c.enter != null ? String(c.enter.radius) : "",
             dwell_title: c.dwell?.title ?? "",
             dwell_description: c.dwell?.description ?? "",
-            dwell_radius: c.dwell != null ? String(c.dwell.radius) : "",
             exit_title: c.exit?.title ?? "",
             exit_description: c.exit?.description ?? "",
-            exit_radius: c.exit != null ? String(c.exit.radius) : "",
           });
         } else setFullCampaign(null);
       })
@@ -185,6 +179,7 @@ export function CampaignFormModal({
         uf: values.uf.trim() ? values.uf.trim().toUpperCase() : undefined,
         lat: Number(values.lat),
         long: Number(values.long),
+        radius: Math.round(Number(values.radius)),
         enabled: values.enabled,
       };
       if (fullCampaign.enter) {
@@ -192,7 +187,6 @@ export function CampaignFormModal({
           title: values.enter_title.trim(),
           description: values.enter_description.trim() || undefined,
           type_id: typeEnter?.id,
-          radius: Math.round(Number(values.enter_radius)),
         };
       }
       if (fullCampaign.dwell) {
@@ -200,7 +194,6 @@ export function CampaignFormModal({
           title: values.dwell_title.trim(),
           description: values.dwell_description.trim() || undefined,
           type_id: typeDwell?.id,
-          radius: Math.round(Number(values.dwell_radius)),
         };
       }
       if (fullCampaign.exit) {
@@ -208,7 +201,6 @@ export function CampaignFormModal({
           title: values.exit_title.trim(),
           description: values.exit_description.trim() || undefined,
           type_id: typeExit?.id,
-          radius: Math.round(Number(values.exit_radius)),
         };
       }
       const result = await campaignController.update(campaign.id, dto);
@@ -323,7 +315,7 @@ export function CampaignFormModal({
                           validate: (v) => validateCampaignLatLong(v, "lat"),
                         }}
                         render={({ field, fieldState }) => (
-                          <FormField label="Latitude (centro)" error={fieldState.error?.message} htmlFor="edit-lat">
+                          <FormField label="Latitude" error={fieldState.error?.message} htmlFor="edit-lat">
                             <Input
                               id="edit-lat"
                               type="number"
@@ -345,7 +337,7 @@ export function CampaignFormModal({
                           validate: (v) => validateCampaignLatLong(v, "long"),
                         }}
                         render={({ field, fieldState }) => (
-                          <FormField label="Longitude (centro)" error={fieldState.error?.message} htmlFor="edit-long">
+                          <FormField label="Longitude" error={fieldState.error?.message} htmlFor="edit-long">
                             <Input
                               id="edit-long"
                               type="number"
@@ -355,6 +347,27 @@ export function CampaignFormModal({
                               size="sm"
                               min={CAMPAIGN_VALIDATION.ITEM_LONG_MIN}
                               max={CAMPAIGN_VALIDATION.ITEM_LONG_MAX}
+                            />
+                          </FormField>
+                        )}
+                      />
+                      <Controller
+                        name="radius"
+                        control={control}
+                        rules={{
+                          required: "Raio é obrigatório",
+                          validate: validateCampaignRadius,
+                        }}
+                        render={({ field, fieldState }) => (
+                          <FormField label={CAMPAIGN_MESSAGES.colRadius} error={fieldState.error?.message} htmlFor="edit-radius">
+                            <Input
+                              id="edit-radius"
+                              type="number"
+                              {...field}
+                              value={String(field.value ?? "")}
+                              size="sm"
+                              min={CAMPAIGN_VALIDATION.RADIUS_MIN}
+                              max={CAMPAIGN_VALIDATION.RADIUS_MAX}
                             />
                           </FormField>
                         )}
@@ -445,21 +458,6 @@ function EditItemSection({
           render={({ field, fieldState }) => (
             <FormField label={CAMPAIGN_MESSAGES.itemDescription} error={fieldState.error?.message} htmlFor={`${prefix}-desc`}>
               <Input id={`${prefix}-desc`} {...field} value={String(field.value ?? "")} placeholder="Opcional" size="sm" maxLength={CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_radius` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Raio é obrigatório",
-            validate: (v) =>
-              isIntegerInRange(v, CAMPAIGN_VALIDATION.RADIUS_MIN, CAMPAIGN_VALIDATION.RADIUS_MAX) ||
-              `Raio entre ${CAMPAIGN_VALIDATION.RADIUS_MIN} e ${CAMPAIGN_VALIDATION.RADIUS_MAX}`,
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Raio (m)" error={fieldState.error?.message} htmlFor={`${prefix}-radius`}>
-              <Input id={`${prefix}-radius`} type="number" {...field} value={String(field.value ?? "")} size="sm" min={CAMPAIGN_VALIDATION.RADIUS_MIN} max={CAMPAIGN_VALIDATION.RADIUS_MAX} />
             </FormField>
           )}
         />

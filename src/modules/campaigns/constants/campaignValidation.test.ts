@@ -6,6 +6,7 @@ import {
   isDecimalInRange,
   isValidDateString,
   validateCampaignLatLong,
+  validateCampaignRadius,
 } from "./campaignValidation";
 
 describe("campaignValidation", () => {
@@ -64,6 +65,25 @@ describe("campaignValidation", () => {
     it("retorna false para fora do intervalo", () => {
       expect(isDecimalInRange(1000, -999.9999999, 999.9999999)).toBe(false);
       expect(isDecimalInRange(-1000, -999.9999999, 999.9999999)).toBe(false);
+    });
+  });
+
+  describe("validateCampaignRadius", () => {
+    it("aceita inteiro no intervalo do cabeçalho", () => {
+      expect(validateCampaignRadius(1)).toBe(true);
+      expect(validateCampaignRadius(100000)).toBe(true);
+      expect(validateCampaignRadius(500)).toBe(true);
+    });
+    it("rejeita fora do intervalo", () => {
+      expect(validateCampaignRadius(0)).toMatch(/Raio entre/);
+      expect(validateCampaignRadius(100001)).toMatch(/Raio entre/);
+    });
+    it("rejeita não inteiro", () => {
+      expect(validateCampaignRadius(10.5)).toMatch(/Raio entre/);
+    });
+    it("rejeita vazio ou não numérico", () => {
+      expect(validateCampaignRadius("")).toBe("Raio deve ser um número inteiro");
+      expect(validateCampaignRadius("x")).toBe("Raio deve ser um número inteiro");
     });
   });
 

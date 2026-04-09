@@ -6,8 +6,12 @@ export interface CampaignHeader {
   exp_date: string | null;
   city: string | null;
   uf: string | null;
-  lat: string;
-  long: string;
+  /** Centro da geofence (JSON numérico). */
+  lat: number;
+  /** Centro da geofence (JSON numérico). */
+  long: number;
+  /** Raio da geofence em metros (único por campanha). */
+  radius: number;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -15,22 +19,24 @@ export interface CampaignHeader {
   delivery_count?: number;
 }
 
+/** Item enter/dwell/exit: só conteúdo; geofence (lat/long/radius) fica no cabeçalho da campanha. */
 export interface CampaignItem {
   id: string;
   title: string;
   description: string | null;
   type_id: string;
-  radius: number;
   created_at: string;
   updated_at: string;
 }
 
-/** Campos atualizáveis de um item (sem lat/long; centro fica no cabeçalho). */
+/**
+ * PATCH parcial de item na campanha (PUT /campaigns/:id).
+ * Apenas title, description e type_id — nunca lat, long ou radius.
+ */
 export type UpdateCampaignItemPartial = Partial<{
   title: string;
   description: string;
   type_id: string;
-  radius: number;
 }>;
 
 export interface CampaignWithItems extends CampaignHeader {
@@ -71,14 +77,16 @@ export interface CreateCampaignDTO {
   uf: string;
   lat: number;
   long: number;
+  /** Inteiro em metros (1..100000). */
+  radius: number;
   enabled?: boolean;
 }
 
+/** POST /campaigns/:id/items — só conteúdo. */
 export interface CreateCampaignItemDTO {
   title: string;
   description?: string;
   type_id: string;
-  radius: number;
 }
 
 export interface UpdateCampaignDTO {
@@ -88,6 +96,7 @@ export interface UpdateCampaignDTO {
   uf?: string;
   lat?: number;
   long?: number;
+  radius?: number;
   enabled?: boolean;
   enter?: UpdateCampaignItemPartial;
   dwell?: UpdateCampaignItemPartial;

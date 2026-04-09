@@ -54,7 +54,18 @@ export function isValidDateString(value: string): boolean {
   return !Number.isNaN(parsed.getTime());
 }
 
-/** Latitude/longitude do centro da campanha (mesmos intervalos dos itens antigos). */
+/** Raio da geofence no cabeçalho (inteiro em metros, RADIUS_MIN..RADIUS_MAX). */
+export function validateCampaignRadius(value: unknown): true | string {
+  if (!isValidNumber(value)) return "Raio deve ser um número inteiro";
+  if (
+    !isIntegerInRange(value, CAMPAIGN_VALIDATION.RADIUS_MIN, CAMPAIGN_VALIDATION.RADIUS_MAX)
+  ) {
+    return `Raio entre ${CAMPAIGN_VALIDATION.RADIUS_MIN} e ${CAMPAIGN_VALIDATION.RADIUS_MAX}`;
+  }
+  return true;
+}
+
+/** Latitude/longitude do centro da geofence da campanha. */
 export function validateCampaignLatLong(
   value: unknown,
   axis: "lat" | "long"

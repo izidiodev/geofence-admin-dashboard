@@ -17,7 +17,11 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import { isValidDateString, validateCampaignLatLong } from "@modules/campaigns/constants/campaignValidation";
+import {
+  isValidDateString,
+  validateCampaignLatLong,
+  validateCampaignRadius,
+} from "@modules/campaigns/constants/campaignValidation";
 import { validateCampaignCityUfCreate } from "@modules/campaigns/constants/campaignLocationValidation";
 import type { CreateCampaignDTO } from "@/types/campaign";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
@@ -39,6 +43,7 @@ interface FormValues {
   uf: string;
   lat: string;
   long: string;
+  radius: string;
   enabled: boolean;
 }
 
@@ -49,6 +54,7 @@ const defaultValues: FormValues = {
   uf: "",
   lat: "",
   long: "",
+  radius: "",
   enabled: true,
 };
 
@@ -69,6 +75,7 @@ export function CreateCampaignModal({
       uf: values.uf.trim().toUpperCase(),
       lat: Number(values.lat),
       long: Number(values.long),
+      radius: Math.round(Number(values.radius)),
       enabled: values.enabled,
     };
     const result = await campaignController.create(dto);
@@ -173,7 +180,7 @@ export function CreateCampaignModal({
                     validate: (v) => validateCampaignLatLong(v, "lat"),
                   }}
                   render={({ field, fieldState }) => (
-                    <FormField label="Latitude (centro)" error={fieldState.error?.message} htmlFor="create-lat">
+                    <FormField label="Latitude" error={fieldState.error?.message} htmlFor="create-lat">
                       <Input
                         id="create-lat"
                         type="number"
@@ -194,7 +201,7 @@ export function CreateCampaignModal({
                     validate: (v) => validateCampaignLatLong(v, "long"),
                   }}
                   render={({ field, fieldState }) => (
-                    <FormField label="Longitude (centro)" error={fieldState.error?.message} htmlFor="create-long">
+                    <FormField label="Longitude" error={fieldState.error?.message} htmlFor="create-long">
                       <Input
                         id="create-long"
                         type="number"
@@ -203,6 +210,26 @@ export function CreateCampaignModal({
                         size="sm"
                         min={CAMPAIGN_VALIDATION.ITEM_LONG_MIN}
                         max={CAMPAIGN_VALIDATION.ITEM_LONG_MAX}
+                      />
+                    </FormField>
+                  )}
+                />
+                <Controller
+                  name="radius"
+                  control={control}
+                  rules={{
+                    required: "Raio é obrigatório",
+                    validate: validateCampaignRadius,
+                  }}
+                  render={({ field, fieldState }) => (
+                    <FormField label={CAMPAIGN_MESSAGES.colRadius} error={fieldState.error?.message} htmlFor="create-radius">
+                      <Input
+                        id="create-radius"
+                        type="number"
+                        {...field}
+                        size="sm"
+                        min={CAMPAIGN_VALIDATION.RADIUS_MIN}
+                        max={CAMPAIGN_VALIDATION.RADIUS_MAX}
                       />
                     </FormField>
                   )}
