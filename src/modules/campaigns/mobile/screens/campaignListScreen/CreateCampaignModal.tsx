@@ -17,7 +17,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import { isValidDateString } from "@modules/campaigns/constants/campaignValidation";
+import { isValidDateString, validateCampaignLatLong } from "@modules/campaigns/constants/campaignValidation";
 import { validateCampaignCityUfCreate } from "@modules/campaigns/constants/campaignLocationValidation";
 import type { CreateCampaignDTO } from "@/types/campaign";
 import { showApiResultSnackbar } from "@/utils/showApiResultSnackbar";
@@ -37,6 +37,8 @@ interface FormValues {
   exp_date: string;
   city: string;
   uf: string;
+  lat: string;
+  long: string;
   enabled: boolean;
 }
 
@@ -45,6 +47,8 @@ const defaultValues: FormValues = {
   exp_date: "",
   city: "",
   uf: "",
+  lat: "",
+  long: "",
   enabled: true,
 };
 
@@ -63,6 +67,8 @@ export function CreateCampaignModal({
       exp_date: values.exp_date.trim(),
       city: values.city.trim(),
       uf: values.uf.trim().toUpperCase(),
+      lat: Number(values.lat),
+      long: Number(values.long),
       enabled: values.enabled,
     };
     const result = await campaignController.create(dto);
@@ -157,6 +163,48 @@ export function CreateCampaignModal({
                         </FormField>
                       )}
                     />
+                  )}
+                />
+                <Controller
+                  name="lat"
+                  control={control}
+                  rules={{
+                    required: "Latitude é obrigatória",
+                    validate: (v) => validateCampaignLatLong(v, "lat"),
+                  }}
+                  render={({ field, fieldState }) => (
+                    <FormField label="Latitude (centro)" error={fieldState.error?.message} htmlFor="create-lat">
+                      <Input
+                        id="create-lat"
+                        type="number"
+                        step="any"
+                        {...field}
+                        size="sm"
+                        min={CAMPAIGN_VALIDATION.ITEM_LAT_MIN}
+                        max={CAMPAIGN_VALIDATION.ITEM_LAT_MAX}
+                      />
+                    </FormField>
+                  )}
+                />
+                <Controller
+                  name="long"
+                  control={control}
+                  rules={{
+                    required: "Longitude é obrigatória",
+                    validate: (v) => validateCampaignLatLong(v, "long"),
+                  }}
+                  render={({ field, fieldState }) => (
+                    <FormField label="Longitude (centro)" error={fieldState.error?.message} htmlFor="create-long">
+                      <Input
+                        id="create-long"
+                        type="number"
+                        step="any"
+                        {...field}
+                        size="sm"
+                        min={CAMPAIGN_VALIDATION.ITEM_LONG_MIN}
+                        max={CAMPAIGN_VALIDATION.ITEM_LONG_MAX}
+                      />
+                    </FormField>
                   )}
                 />
                 <Controller

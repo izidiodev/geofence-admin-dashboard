@@ -6,6 +6,8 @@ export interface CampaignHeader {
   exp_date: string | null;
   city: string | null;
   uf: string | null;
+  lat: string;
+  long: string;
   enabled: boolean;
   created_at: string;
   updated_at: string;
@@ -18,12 +20,18 @@ export interface CampaignItem {
   title: string;
   description: string | null;
   type_id: string;
-  lat: string | number;
-  long: string | number;
   radius: number;
   created_at: string;
   updated_at: string;
 }
+
+/** Campos atualizáveis de um item (sem lat/long; centro fica no cabeçalho). */
+export type UpdateCampaignItemPartial = Partial<{
+  title: string;
+  description: string;
+  type_id: string;
+  radius: number;
+}>;
 
 export interface CampaignWithItems extends CampaignHeader {
   enter: CampaignItem | null;
@@ -61,6 +69,8 @@ export interface CreateCampaignDTO {
   exp_date: string;
   city: string;
   uf: string;
+  lat: number;
+  long: number;
   enabled?: boolean;
 }
 
@@ -68,8 +78,6 @@ export interface CreateCampaignItemDTO {
   title: string;
   description?: string;
   type_id: string;
-  lat: number;
-  long: number;
   radius: number;
 }
 
@@ -78,8 +86,10 @@ export interface UpdateCampaignDTO {
   exp_date?: string;
   city?: string;
   uf?: string;
+  lat?: number;
+  long?: number;
   enabled?: boolean;
-  enter?: Partial<Omit<CreateCampaignItemDTO, "type_id"> & { type_id?: string }>;
-  dwell?: Partial<Omit<CreateCampaignItemDTO, "type_id"> & { type_id?: string }>;
-  exit?: Partial<Omit<CreateCampaignItemDTO, "type_id"> & { type_id?: string }>;
+  enter?: UpdateCampaignItemPartial;
+  dwell?: UpdateCampaignItemPartial;
+  exit?: UpdateCampaignItemPartial;
 }

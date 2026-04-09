@@ -64,6 +64,10 @@ export function CampaignViewModal({ campaign, onClose }: CampaignViewModalProps)
                   <dd>{full.city ?? "—"}</dd>
                   <dt><strong>{CAMPAIGN_MESSAGES.colUf}</strong></dt>
                   <dd>{full.uf ?? "—"}</dd>
+                  <dt><strong>Latitude (centro)</strong></dt>
+                  <dd>{full.lat ?? "—"}</dd>
+                  <dt><strong>Longitude (centro)</strong></dt>
+                  <dd>{full.long ?? "—"}</dd>
                   <dt><strong>Data de expiração</strong></dt>
                   <dd>{full.exp_date ? new Date(full.exp_date).toLocaleDateString("pt-BR") : "—"}</dd>
                   <dt><strong>Ativa</strong></dt>
@@ -104,7 +108,7 @@ function ItemBlock({
   item,
 }: {
   label: string;
-  item: { title: string; description: string | null; lat: string | number; long: string | number; radius: number };
+  item: { title: string; description: string | null; radius: number };
 }): React.ReactNode {
   return (
     <Box p={3} borderRadius="md" bg="gray.50" borderWidth="1px" borderColor="gray.200">
@@ -116,10 +120,6 @@ function ItemBlock({
             <dd>{item.description}</dd>
           </>
         )}
-        <dt><strong>Lat</strong></dt>
-        <dd>{String(item.lat)}</dd>
-        <dt><strong>Long</strong></dt>
-        <dd>{String(item.long)}</dd>
         <dt><strong>Raio (m)</strong></dt>
         <dd>{item.radius}</dd>
       </dl>

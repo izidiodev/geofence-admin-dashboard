@@ -18,12 +18,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { campaignController } from "@modules/campaigns/business";
-import {
-  CAMPAIGN_VALIDATION,
-  isDecimalInRange,
-  isIntegerInRange,
-  isValidNumber,
-} from "@modules/campaigns/constants/campaignValidation";
+import { CAMPAIGN_VALIDATION, isIntegerInRange } from "@modules/campaigns/constants/campaignValidation";
 import { typeRepository } from "@modules/types/business/main";
 import type { CreateCampaignItemDTO } from "@/types/campaign";
 import type { Type } from "@/types/type";
@@ -69,36 +64,24 @@ interface AddCampaignItemsModalProps {
 interface FormValues {
   enter_title: string;
   enter_description: string;
-  enter_lat: string;
-  enter_long: string;
   enter_radius: string;
   dwell_title: string;
   dwell_description: string;
-  dwell_lat: string;
-  dwell_long: string;
   dwell_radius: string;
   exit_title: string;
   exit_description: string;
-  exit_lat: string;
-  exit_long: string;
   exit_radius: string;
 }
 
 const defaultValues: FormValues = {
   enter_title: "",
   enter_description: "",
-  enter_lat: "",
-  enter_long: "",
   enter_radius: "",
   dwell_title: "",
   dwell_description: "",
-  dwell_lat: "",
-  dwell_long: "",
   dwell_radius: "",
   exit_title: "",
   exit_description: "",
-  exit_lat: "",
-  exit_long: "",
   exit_radius: "",
 };
 
@@ -148,8 +131,6 @@ export function AddCampaignItemsModal({
             title: values.enter_title.trim(),
             description: values.enter_description.trim() || undefined,
             type_id: typeEnter.id,
-            lat: Number(values.enter_lat),
-            long: Number(values.enter_long),
             radius: Math.round(Number(values.enter_radius)),
           },
         },
@@ -159,8 +140,6 @@ export function AddCampaignItemsModal({
             title: values.dwell_title.trim(),
             description: values.dwell_description.trim() || undefined,
             type_id: typeDwell.id,
-            lat: Number(values.dwell_lat),
-            long: Number(values.dwell_long),
             radius: Math.round(Number(values.dwell_radius)),
           },
         },
@@ -170,8 +149,6 @@ export function AddCampaignItemsModal({
             title: values.exit_title.trim(),
             description: values.exit_description.trim() || undefined,
             type_id: typeExit.id,
-            lat: Number(values.exit_lat),
-            long: Number(values.exit_long),
             radius: Math.round(Number(values.exit_radius)),
           },
         },
@@ -278,60 +255,6 @@ function ItemSection({
           render={({ field, fieldState }) => (
             <FormField label={CAMPAIGN_MESSAGES.itemDescription} error={fieldState.error?.message} htmlFor={`${prefix}-desc`}>
               <Input id={`${prefix}-desc`} {...field} placeholder="Opcional" size="sm" maxLength={CAMPAIGN_VALIDATION.DESCRIPTION_MAX_LENGTH + 1} />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_lat` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Latitude é obrigatória",
-            validate: (v) => {
-              if (!isValidNumber(v)) return "Latitude deve ser um número";
-              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.ITEM_LAT_MIN, CAMPAIGN_VALIDATION.ITEM_LAT_MAX)) {
-                return `Latitude entre ${CAMPAIGN_VALIDATION.ITEM_LAT_MIN} e ${CAMPAIGN_VALIDATION.ITEM_LAT_MAX}`;
-              }
-              return true;
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Latitude" error={fieldState.error?.message} htmlFor={`${prefix}-lat`}>
-              <Input
-                id={`${prefix}-lat`}
-                type="number"
-                step="any"
-                {...field}
-                size="sm"
-                min={CAMPAIGN_VALIDATION.ITEM_LAT_MIN}
-                max={CAMPAIGN_VALIDATION.ITEM_LAT_MAX}
-              />
-            </FormField>
-          )}
-        />
-        <Controller
-          name={`${prefix}_long` as keyof FormValues}
-          control={control}
-          rules={{
-            required: "Longitude é obrigatória",
-            validate: (v) => {
-              if (!isValidNumber(v)) return "Longitude deve ser um número";
-              if (!isDecimalInRange(v, CAMPAIGN_VALIDATION.ITEM_LONG_MIN, CAMPAIGN_VALIDATION.ITEM_LONG_MAX)) {
-                return `Longitude entre ${CAMPAIGN_VALIDATION.ITEM_LONG_MIN} e ${CAMPAIGN_VALIDATION.ITEM_LONG_MAX}`;
-              }
-              return true;
-            },
-          }}
-          render={({ field, fieldState }) => (
-            <FormField label="Longitude" error={fieldState.error?.message} htmlFor={`${prefix}-long`}>
-              <Input
-                id={`${prefix}-long`}
-                type="number"
-                step="any"
-                {...field}
-                size="sm"
-                min={CAMPAIGN_VALIDATION.ITEM_LONG_MIN}
-                max={CAMPAIGN_VALIDATION.ITEM_LONG_MAX}
-              />
             </FormField>
           )}
         />

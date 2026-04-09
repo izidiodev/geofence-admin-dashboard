@@ -5,6 +5,7 @@ import {
   isIntegerInRange,
   isDecimalInRange,
   isValidDateString,
+  validateCampaignLatLong,
 } from "./campaignValidation";
 
 describe("campaignValidation", () => {
@@ -63,6 +64,30 @@ describe("campaignValidation", () => {
     it("retorna false para fora do intervalo", () => {
       expect(isDecimalInRange(1000, -999.9999999, 999.9999999)).toBe(false);
       expect(isDecimalInRange(-1000, -999.9999999, 999.9999999)).toBe(false);
+    });
+  });
+
+  describe("validateCampaignLatLong", () => {
+    it("aceita latitude no intervalo", () => {
+      expect(validateCampaignLatLong(0, "lat")).toBe(true);
+      expect(validateCampaignLatLong(-90, "lat")).toBe(true);
+      expect(validateCampaignLatLong(90, "lat")).toBe(true);
+    });
+    it("rejeita latitude fora do intervalo", () => {
+      expect(validateCampaignLatLong(91, "lat")).toMatch(/Latitude entre/);
+      expect(validateCampaignLatLong(-91, "lat")).toMatch(/Latitude entre/);
+    });
+    it("aceita longitude no intervalo", () => {
+      expect(validateCampaignLatLong(0, "long")).toBe(true);
+      expect(validateCampaignLatLong(180, "long")).toBe(true);
+      expect(validateCampaignLatLong(-180, "long")).toBe(true);
+    });
+    it("rejeita longitude fora do intervalo", () => {
+      expect(validateCampaignLatLong(181, "long")).toMatch(/Longitude entre/);
+    });
+    it("rejeita valor não numérico", () => {
+      expect(validateCampaignLatLong("", "lat")).toBe("Latitude deve ser um número");
+      expect(validateCampaignLatLong("x", "long")).toBe("Longitude deve ser um número");
     });
   });
 

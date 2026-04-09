@@ -53,3 +53,23 @@ export function isValidDateString(value: string): boolean {
   const parsed = new Date(value);
   return !Number.isNaN(parsed.getTime());
 }
+
+/** Latitude/longitude do centro da campanha (mesmos intervalos dos itens antigos). */
+export function validateCampaignLatLong(
+  value: unknown,
+  axis: "lat" | "long"
+): true | string {
+  if (!isValidNumber(value)) {
+    return axis === "lat" ? "Latitude deve ser um número" : "Longitude deve ser um número";
+  }
+  if (axis === "lat") {
+    if (!isDecimalInRange(value, ITEM_LAT_MIN, ITEM_LAT_MAX)) {
+      return `Latitude entre ${ITEM_LAT_MIN} e ${ITEM_LAT_MAX}`;
+    }
+    return true;
+  }
+  if (!isDecimalInRange(value, ITEM_LONG_MIN, ITEM_LONG_MAX)) {
+    return `Longitude entre ${ITEM_LONG_MIN} e ${ITEM_LONG_MAX}`;
+  }
+  return true;
+}
